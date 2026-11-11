@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Evita el zoom accidental y se adapta al ancho del dispositivo -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador RIGOL DS1102E - Canales Independientes y Cursores</title>
     <style>
@@ -28,7 +27,8 @@
             box-sizing: border-box;
             overflow-x: auto;
             user-select: none;
-            -webkit-user-select: none; /* Para Safari en iOS */
+            -webkit-user-select: none;
+            position: relative; /* Crucial para que los cables absolutos se ubiquen bien */
         }
 
         .names-watermark {
@@ -90,7 +90,7 @@
             display: block;
             border-radius: 2px;
             cursor: crosshair;
-            touch-action: none; /* Evita el scroll al arrastrar cursores */
+            touch-action: none;
         }
 
         .screen-overlay-top {
@@ -135,7 +135,6 @@
             display: none;
         }
 
-        /* Soft Keys */
         .soft-keys-container {
             display: flex;
             flex-direction: column;
@@ -213,7 +212,7 @@
             box-shadow: 0 2px 0 #888;
             text-align: center;
             width: 100%;
-            touch-action: manipulation; /* Mejora la respuesta al toque */
+            touch-action: manipulation;
         }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn.active { background: #a0a0a0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
@@ -230,15 +229,14 @@
         .knob-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .knob-label { font-size: 9px; font-weight: bold; color: #333; }
         
-        /* PERILLAS: Agregamos touch-action y cursor para móviles */
         .knob {
             width: 45px; height: 45px;
             background: radial-gradient(circle, #666, #333);
             border-radius: 50%; border: 3px solid #222;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
             position: relative; 
-            cursor: ns-resize; /* Indica que se mueve arriba/abajo */
-            touch-action: none; /* Evita que la página haga scroll al girar la perilla */
+            cursor: ns-resize;
+            touch-action: none;
         }
         .knob-indicator {
             width: 4px; height: 18px; background: white;
@@ -352,25 +350,28 @@
         .gen-ch-btn.active-ch1 { background: #fcec03; border-color: #b0a000; color: #333; }
         .gen-ch-btn.active-ch2 { background: #00f0ff; border-color: #0088cc; color: #333; }
 
-        /* --- CABLES INTERACTIVOS --- */
+        /* --- CABLES INTERACTIVOS ABSOLUTOS --- */
         #cableSvg { 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100vw; height: 100vh; 
+            position: absolute; /* Cambiado de fixed a absolute */
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
             pointer-events: none; 
             z-index: 99999; 
+            touch-action: none;
         }
         .cable-path { fill: none; stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); }
         #pathCH1 { stroke: #ff3333; }
         #pathCH2 { stroke: #0088ff; }
         
         .probe-tip {
-            position: fixed; 
+            position: absolute; /* Cambiado de fixed a absolute */
             width: 22px; height: 22px;
             border: 3px solid #fff; border-radius: 50%;
             cursor: grab; z-index: 100000;
             box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-            touch-action: none; /* Crucial para que no haga scroll al arrastrar */
+            touch-action: none;
         }
         .probe-tip:active { cursor: grabbing; transform: scale(1.2); }
         
@@ -382,6 +383,16 @@
 <body>
 
     <div class="names-watermark">Laura A. Salamanca, Juan J. Fontalvo</div>
+
+    <!-- SVG posicionado absolutamente en el documento -->
+    <svg id="cableSvg">
+        <path id="pathCH1" class="cable-path" d="M 0 0 L 0 0" />
+        <path id="pathCH2" class="cable-path" d="M 0 0 L 0 0" />
+    </svg>
+
+    <!-- Puntas posicionadas absolutamente en el documento -->
+    <div id="probe1" class="probe-tip probe-ch1" title="Arrastra al CH1"></div>
+    <div id="probe2" class="probe-tip probe-ch2" title="Arrastra al CH2"></div>
 
     <div class="workspace">
         <!-- RIGOL OSCILLOSCOPE -->
@@ -404,7 +415,6 @@
                     <div id="measure-box" class="measure-box"></div>
                 </div>
 
-                <!-- Soft Keys -->
                 <div class="soft-keys-container">
                     <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(1)"></button><div class="soft-key-label" id="sk1"></div></div>
                     <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(2)"></button><div class="soft-key-label" id="sk2"></div></div>
@@ -414,7 +424,6 @@
                 </div>
             </div>
 
-            <!-- Puertos BNC -->
             <div class="bnc-ports-container">
                 <div class="bnc-port ch1" id="bnc1">
                     <div class="bnc-inner"></div>
@@ -426,7 +435,6 @@
                 </div>
             </div>
 
-            <!-- Panel de Control -->
             <div class="control-panel">
                 <div class="panel-group">
                     <div class="panel-group-title">MENU</div>
@@ -551,14 +559,6 @@
         </div>
     </div>
 
-    <svg id="cableSvg">
-        <path id="pathCH1" class="cable-path" d="M 0 0 L 0 0" />
-        <path id="pathCH2" class="cable-path" d="M 0 0 L 0 0" />
-    </svg>
-
-    <div id="probe1" class="probe-tip probe-ch1" title="Arrastra al CH1"></div>
-    <div id="probe2" class="probe-tip probe-ch2" title="Arrastra al CH2"></div>
-
     <script>
         const state = {
             ch1Connected: false,
@@ -598,20 +598,38 @@
         const measureBox = document.getElementById('measure-box');
         const labels = [document.getElementById('sk1'), document.getElementById('sk2'), document.getElementById('sk3'), document.getElementById('sk4'), document.getElementById('sk5')];
 
+        // Función auxiliar para coordenadas absolutas
+        function getAbsPos(element) {
+            const rect = element.getBoundingClientRect();
+            const scrollX = window.scrollX || window.pageXOffset;
+            const scrollY = window.scrollY || window.pageYOffset;
+            return {
+                left: rect.left + scrollX,
+                top: rect.top + scrollY,
+                width: rect.width,
+                height: rect.height,
+                centerX: rect.left + scrollX + rect.width / 2,
+                centerY: rect.top + scrollY + rect.height / 2
+            };
+        }
+
         function updateCables() {
-            const rectRed = redTerminal.getBoundingClientRect();
-            const p1Rect = probe1.getBoundingClientRect();
-            const startX1 = rectRed.left + rectRed.width / 2;
-            const startY1 = rectRed.top + rectRed.height / 2;
-            const endX1 = p1Rect.left + p1Rect.width / 2;
-            const endY1 = p1Rect.top + p1Rect.height / 2;
+            const redPos = getAbsPos(redTerminal);
+            const p1Pos = getAbsPos(probe1);
+            const p2Pos = getAbsPos(probe2);
+
+            // Cable CH1
+            const startX1 = redPos.centerX;
+            const startY1 = redPos.centerY;
+            const endX1 = p1Pos.centerX;
+            const endY1 = p1Pos.centerY;
             const ctrlX1 = (startX1 + endX1) / 2;
             const ctrlY1 = Math.max(startY1, endY1) + 80;
             cablePath1.setAttribute('d', `M ${startX1} ${startY1} Q ${ctrlX1} ${ctrlY1} ${endX1} ${endY1}`);
 
-            const p2Rect = probe2.getBoundingClientRect();
-            const endX2 = p2Rect.left + p2Rect.width / 2;
-            const endY2 = p2Rect.top + p2Rect.height / 2;
+            // Cable CH2
+            const endX2 = p2Pos.centerX;
+            const endY2 = p2Pos.centerY;
             const ctrlX2 = (startX1 + endX2) / 2;
             const ctrlY2 = Math.max(startY1, endY2) + 80;
             cablePath2.setAttribute('d', `M ${startX1} ${startY1} Q ${ctrlX2} ${ctrlY2} ${endX2} ${endY2}`);
@@ -621,39 +639,58 @@
         window.addEventListener('resize', updateCables);
 
         function initProbes() {
-            const rectRed = redTerminal.getBoundingClientRect();
-            probe1.style.left = (rectRed.left - 50) + 'px';
-            probe1.style.top = (rectRed.top + 10) + 'px';
-            probe2.style.left = (rectRed.left - 90) + 'px';
-            probe2.style.top = (rectRed.top + 10) + 'px';
+            const redPos = getAbsPos(redTerminal);
+            probe1.style.left = (redPos.left - 50) + 'px';
+            probe1.style.top = (redPos.top + 10) + 'px';
+            probe2.style.left = (redPos.left - 90) + 'px';
+            probe2.style.top = (redPos.top + 10) + 'px';
             updateCables();
         }
 
         function setupDraggableProbe(probeElement, portElement, channel) {
             let isDragging = false;
-            probeElement.addEventListener('pointerdown', (e) => { isDragging = true; probeElement.setPointerCapture(e.pointerId); });
+
+            probeElement.addEventListener('pointerdown', (e) => {
+                e.preventDefault(); // Evita gestos no deseados en móviles
+                isDragging = true;
+                probeElement.setPointerCapture(e.pointerId);
+            });
+
             probeElement.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
-                probeElement.style.left = (e.clientX - 11) + 'px';
-                probeElement.style.top = (e.clientY - 11) + 'px';
+                e.preventDefault();
+                const scrollX = window.scrollX || window.pageXOffset;
+                const scrollY = window.scrollY || window.pageYOffset;
+                probeElement.style.left = (e.clientX + scrollX - 11) + 'px';
+                probeElement.style.top = (e.clientY + scrollY - 11) + 'px';
                 updateCables();
             });
-            probeElement.addEventListener('pointerup', (e) => {
-                isDragging = false;
-                const portRect = portElement.getBoundingClientRect();
-                const probeRect = probeElement.getBoundingClientRect();
-                const dist = Math.hypot((portRect.left + portRect.width/2) - (probeRect.left + probeRect.width/2), (portRect.top + portRect.height/2) - (probeRect.top + probeRect.height/2));
 
-                if (dist < 50) {
+            probeElement.addEventListener('pointerup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const portPos = getAbsPos(portElement);
+                const probePos = getAbsPos(probeElement);
+                
+                const dist = Math.hypot(portPos.centerX - probePos.centerX, portPos.centerY - probePos.centerY);
+
+                // Aumentamos la tolerancia a 60 píxeles para facilitar la conexión con el dedo
+                if (dist < 60) {
                     if (channel === 1) state.ch1Connected = true; else state.ch2Connected = true;
-                    probeElement.style.left = (portRect.left + portRect.width/2 - 11) + 'px';
-                    probeElement.style.top = (portRect.top + portRect.height/2 - 11) + 'px';
+                    probeElement.style.left = (portPos.centerX - 11) + 'px';
+                    probeElement.style.top = (portPos.centerY - 11) + 'px';
                     probeElement.style.borderColor = 'transparent';
                     autoSet();
                 } else {
                     if (channel === 1) state.ch1Connected = false; else state.ch2Connected = false;
                     probeElement.style.borderColor = '#fff';
                 }
+                updateCables();
+            });
+
+            probeElement.addEventListener('pointercancel', () => {
+                isDragging = false;
             });
         }
 
@@ -723,13 +760,10 @@
             document.getElementById('genDisplayVolt').innerText = `Vpp: ${vpp.toFixed(2)} V`;
         }
 
-        // Lógica mejorada para móviles y corrección de límites
         function makeKnobInteractive(knobElement, onChange) {
             let startY = 0, startValue = 0;
             knobElement.addEventListener('pointerdown', (e) => {
-                // Evita el scroll accidental en móviles al tocar la perilla
                 if (e.pointerType === 'touch') e.preventDefault(); 
-                
                 startY = e.clientY;
                 startValue = knobElement.dataset.value ? parseFloat(knobElement.dataset.value) : 0;
                 knobElement.setPointerCapture(e.pointerId);
@@ -737,26 +771,26 @@
             
             knobElement.addEventListener('pointermove', (e) => {
                 if (!knobElement.hasPointerCapture(e.pointerId)) return;
-                
                 const deltaY = startY - e.clientY;
-                // Aumentar sensibilidad para pantallas táctiles (0.1 en vez de 0.05)
                 const sensitivity = e.pointerType === 'touch' ? 0.1 : 0.05;
                 const newValue = startValue + (deltaY * sensitivity);
                 
-                // El callback devuelve el valor real (con los límites aplicados)
                 const actualValue = onChange(newValue);
                 
-                // Actualizamos el indicador visual con el valor real
                 const angle = actualValue * 45;
                 knobElement.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(${angle}deg)`;
                 knobElement.dataset.value = actualValue;
+            });
+
+            knobElement.addEventListener('pointercancel', () => {
+                // Reset if needed
             });
         }
 
         makeKnobInteractive(document.getElementById('knobPosY'), (val) => {
             const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
             ch.posY = Math.max(-5, Math.min(5, val));
-            return ch.posY; // Retornamos el valor limitado
+            return ch.posY;
         });
 
         makeKnobInteractive(document.getElementById('knobScaleY'), (val) => {
@@ -766,7 +800,7 @@
             const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
             ch.voltsDiv = steps[idx];
             updateLabels();
-            return idx - 3; // Retornamos el índice limitado
+            return idx - 3;
         });
 
         makeKnobInteractive(document.getElementById('knobPosX'), (val) => {
@@ -799,11 +833,11 @@
             const x = (e.clientX - rect.left) * (canvas.width / rect.width);
 
             if (state.cursor.type === 'Voltage') {
-                if (Math.abs(y - state.cursor.c1) < 20) draggingCursor = 1;
-                else if (Math.abs(y - state.cursor.c2) < 20) draggingCursor = 2;
+                if (Math.abs(y - state.cursor.c1) < 30) draggingCursor = 1; // Mayor tolerancia táctil
+                else if (Math.abs(y - state.cursor.c2) < 30) draggingCursor = 2;
             } else {
-                if (Math.abs(x - state.cursor.c1) < 20) draggingCursor = 1;
-                else if (Math.abs(x - state.cursor.c2) < 20) draggingCursor = 2;
+                if (Math.abs(x - state.cursor.c1) < 30) draggingCursor = 1;
+                else if (Math.abs(x - state.cursor.c2) < 30) draggingCursor = 2;
             }
             if (draggingCursor) canvas.setPointerCapture(e.pointerId);
         });
@@ -963,7 +997,7 @@
         let lastTime = performance.now();
 
         function render(time) {
-            updateCables();
+            updateCables(); // Actualizar cables para que sigan a los elementos
             const deltaTime = (time - lastTime) / 1000;
             lastTime = time;
             if (state.isRunning) state.time += deltaTime;
