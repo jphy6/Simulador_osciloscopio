@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Evita el zoom accidental y se adapta al ancho del dispositivo -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador RIGOL DS1102E - Canales Independientes y Cursores</title>
     <style>
         :root {
@@ -27,9 +28,9 @@
             box-sizing: border-box;
             overflow-x: auto;
             user-select: none;
+            -webkit-user-select: none; /* Para Safari en iOS */
         }
 
-        /* Nombres en la esquina */
         .names-watermark {
             position: fixed;
             bottom: 15px;
@@ -89,9 +90,9 @@
             display: block;
             border-radius: 2px;
             cursor: crosshair;
+            touch-action: none; /* Evita el scroll al arrastrar cursores */
         }
 
-        /* --- OVERLAYS DE PANTALLA --- */
         .screen-overlay-top {
             position: absolute;
             top: 15px;
@@ -212,6 +213,7 @@
             box-shadow: 0 2px 0 #888;
             text-align: center;
             width: 100%;
+            touch-action: manipulation; /* Mejora la respuesta al toque */
         }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn.active { background: #a0a0a0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
@@ -227,12 +229,16 @@
         .knobs-area { display: flex; flex-direction: column; align-items: center; justify-content: space-around; flex: 2; gap: 15px;}
         .knob-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .knob-label { font-size: 9px; font-weight: bold; color: #333; }
+        
+        /* PERILLAS: Agregamos touch-action y cursor para móviles */
         .knob {
             width: 45px; height: 45px;
             background: radial-gradient(circle, #666, #333);
             border-radius: 50%; border: 3px solid #222;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            position: relative; cursor: pointer;
+            position: relative; 
+            cursor: ns-resize; /* Indica que se mueve arriba/abajo */
+            touch-action: none; /* Evita que la página haga scroll al girar la perilla */
         }
         .knob-indicator {
             width: 4px; height: 18px; background: white;
@@ -240,7 +246,6 @@
             transform: translateX(-50%); border-radius: 2px;
         }
 
-        /* Puerto BNC */
         .bnc-ports-container {
             position: absolute;
             bottom: 20px;
@@ -258,13 +263,7 @@
         }
         .bnc-inner { width: 15px; height: 15px; background-color: #111; border-radius: 50%; border: 1px solid #666; }
         
-        .bnc-label { 
-            position: absolute; 
-            bottom: -8px; 
-            color: #333; 
-            font-weight: bold; 
-            font-size: 12px;
-        }
+        .bnc-label { position: absolute; bottom: -8px; color: #333; font-weight: bold; font-size: 12px; }
         .bnc-port.ch1 .bnc-label { color: #b0a000; }
         .bnc-port.ch2 .bnc-label { color: #0088cc; }
 
@@ -308,7 +307,7 @@
         }
         
         .wave-switch { display: flex; flex-direction: column; gap: 5px; margin-top: 15px; }
-        .wave-btn { padding: 5px; border: 1px solid #999; background: #fff; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .wave-btn { padding: 5px; border: 1px solid #999; background: #fff; border-radius: 4px; cursor: pointer; font-size: 12px; touch-action: manipulation; }
         .wave-btn.active { background: #333; color: #fff; }
 
         .terminals { display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px; }
@@ -317,7 +316,6 @@
         .terminal.black { background-color: #222; }
         .terminal-label { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: bold; }
 
-        /* Display del generador */
         .gen-display {
             background: #111;
             color: #33ff33;
@@ -333,7 +331,6 @@
             justify-content: space-around;
         }
 
-        /* Selector de canal en el generador */
         .gen-channel-selector {
             display: flex;
             justify-content: center;
@@ -350,6 +347,7 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 12px;
+            touch-action: manipulation;
         }
         .gen-ch-btn.active-ch1 { background: #fcec03; border-color: #b0a000; color: #333; }
         .gen-ch-btn.active-ch2 { background: #00f0ff; border-color: #0088cc; color: #333; }
@@ -372,7 +370,7 @@
             border: 3px solid #fff; border-radius: 50%;
             cursor: grab; z-index: 100000;
             box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-            touch-action: none;
+            touch-action: none; /* Crucial para que no haga scroll al arrastrar */
         }
         .probe-tip:active { cursor: grabbing; transform: scale(1.2); }
         
@@ -437,7 +435,6 @@
                         <button class="btn" id="runStopBtn" onclick="toggleRunStop()">RUN/STOP</button>
                     </div>
                     <div class="menu-group">
-                        <!-- Solo queda el botón Cursor -->
                         <button class="btn" onclick="changeMenu('cursor')">Cursor</button>
                     </div>
                 </div>
@@ -525,7 +522,6 @@
                 </div>
             </div>
 
-            <!-- Display de valores del generador -->
             <div class="gen-display">
                 <span id="genDisplayFreq">f: 1.00 kHz</span>
                 <span id="genDisplayVolt">Vpp: 4.00 V</span>
@@ -543,7 +539,6 @@
                 </div>
             </div>
             
-            <!-- Selector de Canal para el Generador -->
             <div class="gen-channel-selector">
                 <button class="gen-ch-btn active-ch1" id="genCh1" onclick="setGeneratorTarget(1)">CH1</button>
                 <button class="gen-ch-btn" id="genCh2" onclick="setGeneratorTarget(2)">CH2</button>
@@ -565,14 +560,12 @@
     <div id="probe2" class="probe-tip probe-ch2" title="Arrastra al CH2"></div>
 
     <script>
-        // --- ESTADO GLOBAL ---
         const state = {
             ch1Connected: false,
             ch2Connected: false,
             isRunning: true,
             activeChannel: 1,
             
-            // Estado independiente por canal
             ch1: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 2.0, freq: 1.0, mult: 1000, wave: 'sine', offset: 1.0 },
             ch2: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 1.0, freq: 0.5, mult: 100, wave: 'square', offset: -1.0 },
             
@@ -581,17 +574,15 @@
             trigLevel: 0,
             time: 0,
             
-            genTarget: 1, // A qué canal está apuntando el generador actualmente
-            
+            genTarget: 1,
             activeMenu: 'ch1',
             
-            // Sistema de Cursores
             cursor: {
                 active: false,
-                type: 'Voltage', // 'Voltage' o 'Time'
-                source: 1,       // CH1 o CH2
-                c1: 150,         // Coordenada Y o X del cursor 1
-                c2: 300          // Coordenada Y o X del cursor 2
+                type: 'Voltage',
+                source: 1,
+                c1: 150,
+                c2: 300
             }
         };
 
@@ -607,7 +598,6 @@
         const measureBox = document.getElementById('measure-box');
         const labels = [document.getElementById('sk1'), document.getElementById('sk2'), document.getElementById('sk3'), document.getElementById('sk4'), document.getElementById('sk5')];
 
-        // --- CABLES ---
         function updateCables() {
             const rectRed = redTerminal.getBoundingClientRect();
             const p1Rect = probe1.getBoundingClientRect();
@@ -670,7 +660,6 @@
         setupDraggableProbe(probe1, bnc1, 1);
         setupDraggableProbe(probe2, bnc2, 2);
 
-        // --- GENERADOR Y CONTROL DE CANAL ---
         function setGeneratorTarget(ch) {
             state.genTarget = ch;
             document.getElementById('genCh1').classList.toggle('active-ch1', ch === 1);
@@ -678,7 +667,6 @@
             document.getElementById('genCh2').classList.toggle('active-ch1', ch === 1);
             document.getElementById('genCh2').classList.toggle('active-ch2', ch === 2);
             
-            // Actualizar UI del generador con los valores del canal seleccionado
             const chData = ch === 1 ? state.ch1 : state.ch2;
             document.getElementById('genFreq').value = chData.freq;
             document.getElementById('genMult').value = chData.mult;
@@ -725,39 +713,50 @@
             document.getElementById('genKnobAmp').style.transform = `rotate(${angleAmp}deg)`;
         }
 
-        // Actualizar pantalla digital del generador
         function updateGenDisplay() {
             const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
             const freq = chData.freq * chData.mult;
-            const vpp = chData.amp * 2; // Asumiendo que amp es el valor pico
+            const vpp = chData.amp * 2;
             
             let fStr = freq >= 1000 ? (freq/1000).toFixed(2) + ' kHz' : freq.toFixed(1) + ' Hz';
             document.getElementById('genDisplayFreq').innerText = `f: ${fStr}`;
             document.getElementById('genDisplayVolt').innerText = `Vpp: ${vpp.toFixed(2)} V`;
         }
 
-        // --- PERILLAS ---
+        // Lógica mejorada para móviles y corrección de límites
         function makeKnobInteractive(knobElement, onChange) {
             let startY = 0, startValue = 0;
             knobElement.addEventListener('pointerdown', (e) => {
+                // Evita el scroll accidental en móviles al tocar la perilla
+                if (e.pointerType === 'touch') e.preventDefault(); 
+                
                 startY = e.clientY;
                 startValue = knobElement.dataset.value ? parseFloat(knobElement.dataset.value) : 0;
                 knobElement.setPointerCapture(e.pointerId);
             });
+            
             knobElement.addEventListener('pointermove', (e) => {
                 if (!knobElement.hasPointerCapture(e.pointerId)) return;
+                
                 const deltaY = startY - e.clientY;
-                const newValue = startValue + (deltaY * 0.05);
-                onChange(newValue);
-                const angle = newValue * 45;
+                // Aumentar sensibilidad para pantallas táctiles (0.1 en vez de 0.05)
+                const sensitivity = e.pointerType === 'touch' ? 0.1 : 0.05;
+                const newValue = startValue + (deltaY * sensitivity);
+                
+                // El callback devuelve el valor real (con los límites aplicados)
+                const actualValue = onChange(newValue);
+                
+                // Actualizamos el indicador visual con el valor real
+                const angle = actualValue * 45;
                 knobElement.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(${angle}deg)`;
-                knobElement.dataset.value = newValue;
+                knobElement.dataset.value = actualValue;
             });
         }
 
         makeKnobInteractive(document.getElementById('knobPosY'), (val) => {
             const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
             ch.posY = Math.max(-5, Math.min(5, val));
+            return ch.posY; // Retornamos el valor limitado
         });
 
         makeKnobInteractive(document.getElementById('knobScaleY'), (val) => {
@@ -767,25 +766,34 @@
             const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
             ch.voltsDiv = steps[idx];
             updateLabels();
+            return idx - 3; // Retornamos el índice limitado
         });
 
-        makeKnobInteractive(document.getElementById('knobPosX'), (val) => { state.posX = Math.max(-5, Math.min(5, val)); });
+        makeKnobInteractive(document.getElementById('knobPosX'), (val) => {
+            state.posX = Math.max(-5, Math.min(5, val));
+            return state.posX;
+        });
+        
         makeKnobInteractive(document.getElementById('knobScaleX'), (val) => {
             const steps = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01];
             let idx = Math.round(val + 3);
             idx = Math.max(0, Math.min(steps.length - 1, idx));
             state.timeDiv = steps[idx];
             updateLabels();
-        });
-        makeKnobInteractive(document.getElementById('knobTrigLevel'), (val) => {
-            state.trigLevel = Math.max(-5, Math.min(5, val));
+            return idx - 3;
         });
 
-        // --- INTERACCIÓN CON EL CANVAS (CURSORES) ---
+        makeKnobInteractive(document.getElementById('knobTrigLevel'), (val) => {
+            state.trigLevel = Math.max(-5, Math.min(5, val));
+            return state.trigLevel;
+        });
+
         let draggingCursor = 0;
 
         canvas.addEventListener('pointerdown', (e) => {
             if (!state.cursor.active) return;
+            if (e.pointerType === 'touch') e.preventDefault();
+            
             const rect = canvas.getBoundingClientRect();
             const y = (e.clientY - rect.top) * (canvas.height / rect.height);
             const x = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -823,7 +831,6 @@
             canvas.releasePointerCapture(e.pointerId);
         });
 
-        // --- LÓGICA DE MENÚS ---
         function autoSet() {
             if (!state.ch1Connected && !state.ch2Connected) return;
             const freq = state.ch1.freq * state.ch1.mult;
@@ -887,13 +894,13 @@
                 if (key === 4) { ch.invert = !ch.invert; }
                 updateSoftKeyTexts();
             } else if (state.activeMenu === 'cursor') {
-                if (key === 2) { // Cambiar tipo
+                if (key === 2) {
                     state.cursor.type = state.cursor.type === 'Voltage' ? 'Time' : 'Voltage';
                     if (state.cursor.type === 'Voltage') { state.cursor.c1 = 250; state.cursor.c2 = 500; }
                     else { state.cursor.c1 = 300; state.cursor.c2 = 700; }
                 }
                 if (key === 3) { state.cursor.source = state.cursor.source === 1 ? 2 : 1; }
-                if (key === 4) { // Toggle Cursor
+                if (key === 4) {
                     state.cursor.active = !state.cursor.active;
                     if (state.cursor.active) measureBox.style.display = 'block';
                     else measureBox.style.display = 'none';
@@ -902,7 +909,6 @@
             }
         }
 
-        // --- DIBUJO ---
         function updateLabels() {
             let tStr = state.timeDiv >= 0.001 ? (state.timeDiv * 1000).toFixed(2) + 'ms' : (state.timeDiv * 1000000).toFixed(0) + 'µs';
             document.getElementById('time-info').innerText = `Time ${tStr}`;
@@ -967,17 +973,14 @@
             ctx.fillStyle = '#051405';
             ctx.fillRect(0, 0, w, h);
 
-            // Cuadrícula
             ctx.strokeStyle = '#1e3a1e'; ctx.lineWidth = 1;
             for (let i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo((w / 10) * i, 0); ctx.lineTo((w / 10) * i, h); ctx.stroke(); }
             for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(0, (h / 8) * i); ctx.lineTo(w, (h / 8) * i); ctx.stroke(); }
             
-            // Ejes
             ctx.strokeStyle = '#2a5a2a';
             ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
             
-            // Trigger
             ctx.fillStyle = '#ff3333';
             ctx.beginPath(); ctx.moveTo(w/2, 10); ctx.lineTo(w/2 - 5, 0); ctx.lineTo(w/2 + 5, 0); ctx.fill();
             
