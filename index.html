@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulador RIGOL DS1102E - Canales Independientes y Cursores</title>
+    <title>Simulador RIGOL DS1102E + Circuito RC</title>
     <style>
         :root {
             --bg-page: #1a1a1a;
@@ -38,35 +38,46 @@
             color: rgba(255, 255, 255, 0.4);
             font-family: monospace;
             font-size: 14px;
-            z-index: 999999;
+            z-index: 99999999;
             pointer-events: none;
-            letter-spacing: 1px;
         }
 
-        /* --- BOTÓN DE TUTORIAL --- */
-        .tutorial-btn {
+        /* --- BOTONES FLOTANTES --- */
+        .tutorial-btn, .rc-toggle-btn, .reset-btn {
             position: fixed;
             top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             border-radius: 50%;
-            background: linear-gradient(to bottom, #3498db, #2980b9);
             color: white;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             border: 3px solid #fff;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 1000;
+            z-index: 99999999;
             display: flex;
             justify-content: center;
             align-items: center;
             transition: transform 0.2s;
+        }
+
+        .tutorial-btn {
+            right: 20px;
+            background: linear-gradient(to bottom, #3498db, #2980b9);
             animation: pulse 2s infinite;
         }
 
-        .tutorial-btn:hover { transform: scale(1.1); }
+        .rc-toggle-btn {
+            right: 80px;
+            background: linear-gradient(to bottom, #f59e0b, #d97706);
+        }
+
+        .reset-btn {
+            left: 20px;
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+        }
+
+        .tutorial-btn:hover, .rc-toggle-btn:hover, .reset-btn:hover { transform: scale(1.1); }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
@@ -82,15 +93,8 @@
             box-shadow: 0 0 15px rgba(241, 196, 15, 0.8), inset 0 0 15px rgba(241, 196, 15, 0.4);
             transition: all 0.3s ease;
             pointer-events: none;
-            z-index: 9001;
+            z-index: 99999997;
             display: none;
-            animation: spotlightPulse 1.5s infinite;
-        }
-
-        @keyframes spotlightPulse {
-            0% { border-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
-            50% { border-color: #fff; box-shadow: 0 0 25px rgba(241, 196, 15, 1); }
-            100% { border-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
         }
 
         #tutorialBox {
@@ -102,57 +106,27 @@
             width: 280px;
             max-width: 90vw;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 9002;
+            z-index: 99999998;
             pointer-events: auto;
             transition: all 0.3s ease;
             display: none;
             border-left: 5px solid #f1c40f;
         }
 
-        #tutorialBox h3 {
-            margin: 0 0 8px 0;
-            color: #2c3e50;
-            font-size: 16px;
-        }
-
-        #tutorialBox p {
-            margin: 0 0 12px 0;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-
-        .tutorial-nav {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .tutorial-nav button {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            touch-action: manipulation;
-        }
-
+        #tutorialBox h3 { margin: 0 0 8px 0; color: #2c3e50; font-size: 16px; }
+        #tutorialBox p { margin: 0 0 12px 0; font-size: 13px; line-height: 1.4; }
+        .tutorial-nav { display: flex; justify-content: flex-end; gap: 10px; }
+        .tutorial-nav button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-primary { background: #3498db; color: white; }
-        .btn-primary:hover { background: #2980b9; }
         .btn-secondary { background: #ecf0f1; color: #333; border: 1px solid #bdc3c7; }
-        .btn-secondary:hover { background: #bdc3c7; }
+        .step-success { background-color: #2ecc71 !important; color: white !important; border-left-color: #27ae60 !important; }
 
-        .step-success {
-            background-color: #2ecc71 !important;
-            color: white !important;
-            border-left-color: #27ae60 !important;
-        }
-
+        /* --- WORKSPACE --- */
         .workspace {
             display: flex;
             flex-direction: row;
             flex-wrap: nowrap;
-            gap: 80px; 
+            gap: 20px; 
             padding: 40px 20px;
             width: max-content;
             margin: 0 auto;
@@ -175,150 +149,25 @@
             z-index: 10;
         }
 
-        .display-area {
-            display: flex;
-            gap: 10px;
-        }
+        .display-area { display: flex; gap: 10px; }
+        .screen-bezel { background-color: #222; padding: 10px; border-radius: 5px; border: 2px solid #555; position: relative; }
+        canvas { width: 500px; height: 375px; background-color: var(--screen-bg); display: block; border-radius: 2px; cursor: crosshair; touch-action: none; }
 
-        .screen-bezel {
-            background-color: #222;
-            padding: 10px;
-            border-radius: 5px;
-            border: 2px solid #555;
-            position: relative;
-        }
+        .screen-overlay-top { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; font-family: monospace; font-size: 14px; text-shadow: 1px 1px 2px #000; }
+        .screen-overlay-bottom { position: absolute; bottom: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; font-family: monospace; font-size: 14px; text-shadow: 1px 1px 2px #000; }
+        .measure-box { position: absolute; top: 45px; left: 15px; color: #fff; font-family: monospace; font-size: 13px; pointer-events: none; line-height: 1.5; text-shadow: 1px 1px 2px #000; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 3px; display: none; }
 
-        canvas {
-            width: 500px;
-            height: 375px;
-            background-color: var(--screen-bg);
-            display: block;
-            border-radius: 2px;
-            cursor: crosshair;
-            touch-action: none;
-        }
-
-        .screen-overlay-top {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            font-family: monospace;
-            font-size: 14px;
-            text-shadow: 1px 1px 2px #000;
-        }
-        
-        .screen-overlay-bottom {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            font-family: monospace;
-            font-size: 14px;
-            text-shadow: 1px 1px 2px #000;
-        }
-
-        .measure-box {
-            position: absolute;
-            top: 45px;
-            left: 15px;
-            color: #fff;
-            font-family: monospace;
-            font-size: 13px;
-            pointer-events: none;
-            line-height: 1.5;
-            text-shadow: 1px 1px 2px #000;
-            background: rgba(0,0,0,0.5);
-            padding: 5px;
-            border-radius: 3px;
-            display: none;
-        }
-
-        .soft-keys-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            height: 375px;
-            width: 150px;
-        }
-
-        .soft-key-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .soft-key-btn {
-            width: 25px;
-            height: 25px;
-            background: linear-gradient(to right, #999, #ccc);
-            border: 1px solid #555;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-        }
+        .soft-keys-container { display: flex; flex-direction: column; justify-content: space-around; height: 375px; width: 150px; }
+        .soft-key-row { display: flex; align-items: center; gap: 5px; }
+        .soft-key-btn { width: 25px; height: 25px; background: linear-gradient(to right, #999, #ccc); border: 1px solid #555; border-radius: 4px; cursor: pointer; box-shadow: 2px 2px 4px rgba(0,0,0,0.5); flex-shrink: 0; }
         .soft-key-btn:active { background: #777; }
+        .soft-key-label { font-family: monospace; font-size: 11px; color: #fff; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 3px; width: 100%; text-align: left; border: 1px solid #444; }
 
-        .soft-key-label {
-            font-family: monospace;
-            font-size: 11px;
-            color: #fff;
-            background: rgba(0,0,0,0.6);
-            padding: 2px 5px;
-            border-radius: 3px;
-            width: 100%;
-            text-align: left;
-            border: 1px solid #444;
-        }
+        .control-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-left: 5px; }
+        .panel-group { background-color: var(--rigol-panel); border: 1px solid #aaa; border-radius: 5px; padding: 10px; position: relative; }
+        .panel-group-title { position: absolute; top: -10px; left: 10px; background: var(--rigol-dark); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 3px; letter-spacing: 1px; }
 
-        .control-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-left: 5px;
-        }
-
-        .panel-group {
-            background-color: var(--rigol-panel);
-            border: 1px solid #aaa;
-            border-radius: 5px;
-            padding: 10px;
-            position: relative;
-        }
-        .panel-group-title {
-            position: absolute;
-            top: -10px;
-            left: 10px;
-            background: var(--rigol-dark);
-            color: #fff;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 3px;
-            letter-spacing: 1px;
-        }
-
-        .btn {
-            background: linear-gradient(to bottom, #f0f0f0, #ccc);
-            border: 1px solid #999;
-            border-radius: 4px;
-            padding: 5px;
-            font-size: 10px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            box-shadow: 0 2px 0 #888;
-            text-align: center;
-            width: 100%;
-            touch-action: manipulation;
-        }
+        .btn { background: linear-gradient(to bottom, #f0f0f0, #ccc); border: 1px solid #999; border-radius: 4px; padding: 5px; font-size: 10px; font-weight: bold; color: #333; cursor: pointer; box-shadow: 0 2px 0 #888; text-align: center; width: 100%; touch-action: manipulation; }
         .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn.active { background: #a0a0a0; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
         .btn-yellow { background: linear-gradient(to bottom, #ffe066, #d4b000); border-color: #a08000;}
@@ -326,160 +175,95 @@
 
         .menu-group { display: flex; gap: 5px; justify-content: flex-start; }
         .run-control { display: flex; gap: 5px; justify-content: flex-end; margin-bottom: 10px; }
-
         .vertical-group, .horizontal-group, .trigger-group { display: flex; gap: 10px; }
         .vertical-buttons { display: flex; flex-direction: column; gap: 5px; flex: 1;}
         
         .knobs-area { display: flex; flex-direction: column; align-items: center; justify-content: space-around; flex: 2; gap: 15px;}
         .knob-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .knob-label { font-size: 9px; font-weight: bold; color: #333; }
-        
-        .knob {
-            width: 45px; height: 45px;
-            background: radial-gradient(circle, #666, #333);
-            border-radius: 50%; border: 3px solid #222;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            position: relative; 
-            cursor: ns-resize;
-            touch-action: none;
-        }
-        .knob-indicator {
-            width: 4px; height: 18px; background: white;
-            position: absolute; top: 3px; left: 50%;
-            transform: translateX(-50%); border-radius: 2px;
-        }
+        .knob { width: 45px; height: 45px; background: radial-gradient(circle, #666, #333); border-radius: 50%; border: 3px solid #222; box-shadow: 0 4px 6px rgba(0,0,0,0.4); position: relative; cursor: ns-resize; touch-action: none; }
+        .knob-indicator { width: 4px; height: 18px; background: white; position: absolute; top: 3px; left: 50%; transform: translateX(-50%); border-radius: 2px; }
 
-        .bnc-ports-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50px;
-            display: flex;
-            gap: 20px;
-        }
-        .bnc-port {
-            width: 45px; height: 45px;
-            background: radial-gradient(circle, #888 30%, #444 70%, #222 100%);
-            border-radius: 50%; border: 3px solid #999;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-            position: relative;
-        }
+        .bnc-ports-container { position: absolute; bottom: 20px; left: 50px; display: flex; gap: 20px; }
+        .bnc-port { width: 45px; height: 45px; background: radial-gradient(circle, #888 30%, #444 70%, #222 100%); border-radius: 50%; border: 3px solid #999; display: flex; justify-content: center; align-items: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); position: relative; }
         .bnc-inner { width: 15px; height: 15px; background-color: #111; border-radius: 50%; border: 1px solid #666; }
-        
         .bnc-label { position: absolute; bottom: -8px; color: #333; font-weight: bold; font-size: 12px; }
         .bnc-port.ch1 .bnc-label { color: #b0a000; }
         .bnc-port.ch2 .bnc-label { color: #0088cc; }
 
-        /* --- GENERADOR LEYBOLD --- */
+        /* --- PANEL RC --- */
+        .rc-panel {
+            background-color: #1a2233;
+            border-radius: 10px;
+            padding: 15px;
+            width: 220px;
+            flex-shrink: 0;
+            color: #eef2ff;
+            border: 2px solid #f59e0b;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            gap: 8px;
+            height: fit-content;
+            z-index: 5;
+        }
+
+        .rc-panel-title { font-weight: bold; text-align: center; font-size: 14px; color: #f59e0b; margin-bottom: 5px; }
+        .rc-schematic { background: #0b0f1a; border-radius: 6px; padding: 5px; border: 1px solid #333; }
+        
+        .rc-control { display: flex; flex-direction: column; gap: 2px; }
+        .rc-control label { font-size: 11px; font-weight: bold; color: #cbd5e1; display: flex; justify-content: space-between; }
+        .rc-control input[type="range"] { width: 100%; cursor: pointer; touch-action: manipulation; accent-color: #f59e0b; }
+
+        .rc-info { background: #0b0f1a; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #f59e0b; text-align: center; border: 1px solid #333; }
+        
+        .rc-channels { display: flex; gap: 5px; }
+        .rc-ch-btn { flex: 1; padding: 6px; border: 1px solid #555; background: #2c3e50; color: #ccc; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .rc-ch-btn.active-rc { background: #f59e0b; color: #000; border-color: #d97706; }
+        .rc-ch-btn:active { transform: scale(0.95); }
+
+        .rc-hint { font-size: 10px; color: #64748b; text-align: center; line-height: 1.2; }
+
+        /* --- GENERADOR --- */
         .generator {
             background-color: #f0f0f0;
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            width: 350px;
+            width: 300px;
             flex-shrink: 0;
             color: var(--text-dark);
             border: 2px solid #ccc;
             height: fit-content;
             z-index: 5;
         }
-        .gen-top-panel {
-            background-color: #d8d8d8;
-            border-radius: 6px;
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            border: 1px solid #bbb;
-        }
+        .gen-top-panel { background-color: #d8d8d8; border-radius: 6px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border: 1px solid #bbb; }
         .gen-section { display: flex; flex-direction: column; align-items: center; }
         .gen-label { font-size: 11px; font-weight: bold; margin-bottom: 5px; }
-        
-        .gen-knob-container {
-            width: 50px; height: 50px;
-            background: linear-gradient(135deg, #fff, #ccc);
-            border-radius: 50%;
-            box-shadow: 2px 4px 6px rgba(0,0,0,0.3);
-            position: relative;
-            margin-bottom: 5px;
-        }
-        .gen-knob-indicator {
-            width: 4px; height: 20px; background: #222;
-            position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
-            border-radius: 2px;
-        }
-        
+        .gen-knob-container { width: 45px; height: 45px; background: linear-gradient(135deg, #fff, #ccc); border-radius: 50%; box-shadow: 2px 4px 6px rgba(0,0,0,0.3); position: relative; margin-bottom: 5px; }
+        .gen-knob-indicator { width: 4px; height: 18px; background: #222; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); border-radius: 2px; }
         .wave-switch { display: flex; flex-direction: column; gap: 5px; margin-top: 15px; }
-        .wave-btn { padding: 5px; border: 1px solid #999; background: #fff; border-radius: 4px; cursor: pointer; font-size: 12px; touch-action: manipulation; }
+        .wave-btn { padding: 4px; border: 1px solid #999; background: #fff; border-radius: 4px; cursor: pointer; font-size: 11px; touch-action: manipulation; }
         .wave-btn.active { background: #333; color: #fff; }
-
         .terminals { display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px; }
-        .terminal { width: 25px; height: 25px; border-radius: 50%; border: 3px solid #333; position: relative; }
+        .terminal { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #333; position: relative; }
         .terminal.red { background-color: #d32f2f; }
         .terminal.black { background-color: #222; }
         .terminal-label { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: bold; }
-
-        .gen-display {
-            background: #111;
-            color: #33ff33;
-            font-family: monospace;
-            font-size: 14px;
-            text-align: center;
-            padding: 8px;
-            margin-top: 15px;
-            border-radius: 4px;
-            border: 2px solid #555;
-            box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .gen-channel-selector {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
-        }
-        .gen-ch-btn {
-            padding: 5px 15px;
-            border: 2px solid #999;
-            background: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
-            touch-action: manipulation;
-        }
+        .gen-display { background: #111; color: #33ff33; font-family: monospace; font-size: 13px; text-align: center; padding: 6px; margin-top: 12px; border-radius: 4px; border: 2px solid #555; display: flex; justify-content: space-around; }
+        .gen-channel-selector { display: flex; justify-content: center; gap: 10px; margin-top: 12px; border-top: 1px solid #ccc; padding-top: 8px; }
+        .gen-ch-btn { padding: 4px 12px; border: 2px solid #999; background: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
         .gen-ch-btn.active-ch1 { background: #fcec03; border-color: #b0a000; color: #333; }
         .gen-ch-btn.active-ch2 { background: #00f0ff; border-color: #0088cc; color: #333; }
 
-        /* --- CABLES INTERACTIVOS ABSOLUTOS --- */
-        #cableSvg { 
-            position: absolute;
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            pointer-events: none; 
-            z-index: 99999; 
-            touch-action: none;
-        }
+        /* --- CABLES --- */
+        #cableSvg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; touch-action: none; }
         .cable-path { fill: none; stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); }
         #pathCH1 { stroke: #ff3333; }
         #pathCH2 { stroke: #0088ff; }
         
-        .probe-tip {
-            position: absolute;
-            width: 22px; height: 22px;
-            border: 3px solid #fff; border-radius: 50%;
-            cursor: grab; z-index: 100000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-            touch-action: none;
-        }
+        .probe-tip { position: absolute; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; cursor: grab; z-index: 100000; box-shadow: 0 4px 8px rgba(0,0,0,0.6); touch-action: none; }
         .probe-tip:active { cursor: grabbing; transform: scale(1.2); }
-        
         .probe-ch1 { background: radial-gradient(circle, #ff7777, #cc0000); }
         .probe-ch2 { background: radial-gradient(circle, #77bbff, #0066cc); }
 
@@ -489,10 +273,12 @@
 
     <div class="names-watermark">Laura A. Salamanca, Juan J. Fontalvo</div>
 
-    <!-- Botón de Tutorial -->
+    <!-- Botones Flotantes -->
+    <button class="reset-btn" id="resetAllBtn">↻</button>
     <button class="tutorial-btn" id="tutorialBtn">?</button>
+    <button class="rc-toggle-btn" id="rcToggleBtn">Ω</button>
 
-    <!-- Elementos del Tutorial -->
+    <!-- Tutorial UI -->
     <div id="spotlight"></div>
     <div id="tutorialBox">
         <h3 id="tutTitle">Paso 1</h3>
@@ -503,55 +289,43 @@
         </div>
     </div>
 
-    <!-- SVG posicionado absolutamente en el documento -->
+    <!-- Cables SVG y Sondas -->
     <svg id="cableSvg">
         <path id="pathCH1" class="cable-path" d="M 0 0 L 0 0" />
         <path id="pathCH2" class="cable-path" d="M 0 0 L 0 0" />
     </svg>
-
-    <!-- Puntas posicionadas absolutamente en el documento -->
     <div id="probe1" class="probe-tip probe-ch1" title="Arrastra al CH1"></div>
     <div id="probe2" class="probe-tip probe-ch2" title="Arrastra al CH2"></div>
 
     <div class="workspace">
         <!-- RIGOL OSCILLOSCOPE -->
         <div class="rigol-chassis" id="rigolChassis">
-            
             <div class="display-area">
                 <div class="screen-bezel" id="scopeScreen">
                     <canvas id="scopeCanvas" width="1000" height="750"></canvas>
-                    
                     <div class="screen-overlay-top">
                         <span id="ch1-info" style="color: var(--trace-ch1);">CH1 1.00V</span>
                         <span id="ch2-info" style="color: var(--trace-ch2);">CH2 1.00V</span>
                     </div>
-                    
                     <div class="screen-overlay-bottom">
                         <span id="time-info" style="color: #fff;">Time 1.00ms</span>
                         <span id="trig-info" style="color: #ff3333; font-weight: bold;">Trig Auto</span>
                     </div>
-                    
                     <div id="measure-box" class="measure-box"></div>
                 </div>
 
                 <div class="soft-keys-container">
-                    <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(1)"></button><div class="soft-key-label" id="sk1"></div></div>
-                    <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(2)"></button><div class="soft-key-label" id="sk2"></div></div>
-                    <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(3)"></button><div class="soft-key-label" id="sk3"></div></div>
-                    <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(4)"></button><div class="soft-key-label" id="sk4"></div></div>
-                    <div class="soft-key-row"><button class="soft-key-btn" onclick="handleSoftKey(5)"></button><div class="soft-key-label" id="sk5"></div></div>
+                    <div class="soft-key-row"><button class="soft-key-btn" id="softKey1" onclick="handleSoftKey(1)"></button><div class="soft-key-label" id="sk1"></div></div>
+                    <div class="soft-key-row"><button class="soft-key-btn" id="softKey2" onclick="handleSoftKey(2)"></button><div class="soft-key-label" id="sk2"></div></div>
+                    <div class="soft-key-row"><button class="soft-key-btn" id="softKey3" onclick="handleSoftKey(3)"></button><div class="soft-key-label" id="sk3"></div></div>
+                    <div class="soft-key-row"><button class="soft-key-btn" id="softKey4" onclick="handleSoftKey(4)"></button><div class="soft-key-label" id="sk4"></div></div>
+                    <div class="soft-key-row"><button class="soft-key-btn" id="softKey5" onclick="handleSoftKey(5)"></button><div class="soft-key-label" id="sk5"></div></div>
                 </div>
             </div>
 
             <div class="bnc-ports-container">
-                <div class="bnc-port ch1" id="bnc1">
-                    <div class="bnc-inner"></div>
-                    <div class="bnc-label">CH1</div>
-                </div>
-                <div class="bnc-port ch2" id="bnc2">
-                    <div class="bnc-inner"></div>
-                    <div class="bnc-label">CH2</div>
-                </div>
+                <div class="bnc-port ch1" id="bnc1"><div class="bnc-inner"></div><div class="bnc-label">CH1</div></div>
+                <div class="bnc-port ch2" id="bnc2"><div class="bnc-inner"></div><div class="bnc-label">CH2</div></div>
             </div>
 
             <div class="control-panel">
@@ -574,14 +348,8 @@
                             <button class="btn btn-blue" id="ch2Btn" onclick="selectChannel(2)">CH2</button>
                         </div>
                         <div class="knobs-area">
-                            <div class="knob-wrapper">
-                                <div class="knob-label">POSITION</div>
-                                <div class="knob" id="knobPosY"><div class="knob-indicator"></div></div>
-                            </div>
-                            <div class="knob-wrapper">
-                                <div class="knob-label">SCALE</div>
-                                <div class="knob" id="knobScaleY"><div class="knob-indicator"></div></div>
-                            </div>
+                            <div class="knob-wrapper"><div class="knob-label">POSITION</div><div class="knob" id="knobPosY"><div class="knob-indicator"></div></div></div>
+                            <div class="knob-wrapper"><div class="knob-label">SCALE</div><div class="knob" id="knobScaleY"><div class="knob-indicator"></div></div></div>
                         </div>
                     </div>
                 </div>
@@ -593,14 +361,8 @@
                             <button class="btn" onclick="changeMenu('horizontal')">MENU</button>
                         </div>
                         <div class="knobs-area">
-                            <div class="knob-wrapper">
-                                <div class="knob-label">POSITION</div>
-                                <div class="knob" id="knobPosX"><div class="knob-indicator"></div></div>
-                            </div>
-                            <div class="knob-wrapper">
-                                <div class="knob-label">SCALE</div>
-                                <div class="knob" id="knobScaleX"><div class="knob-indicator"></div></div>
-                            </div>
+                            <div class="knob-wrapper"><div class="knob-label">POSITION</div><div class="knob" id="knobPosX"><div class="knob-indicator"></div></div></div>
+                            <div class="knob-wrapper"><div class="knob-label">SCALE</div><div class="knob" id="knobScaleX"><div class="knob-indicator"></div></div></div>
                         </div>
                     </div>
                 </div>
@@ -614,14 +376,59 @@
                             <button class="btn" onclick="forceTrigger()">FORCE</button>
                         </div>
                         <div class="knobs-area">
-                            <div class="knob-wrapper">
-                                <div class="knob-label">LEVEL</div>
-                                <div class="knob" id="knobTrigLevel"><div class="knob-indicator"></div></div>
-                            </div>
+                            <div class="knob-wrapper"><div class="knob-label">LEVEL</div><div class="knob" id="knobTrigLevel"><div class="knob-indicator"></div></div></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- CIRCUITO RC -->
+        <div class="rc-panel" id="rcPanel">
+            <div class="rc-panel-title">⚡ Circuito RC</div>
+            
+            <svg class="rc-schematic" viewBox="0 0 220 110">
+                <line x1="10" y1="40" x2="60" y2="40" stroke="#555" stroke-width="2"/>
+                <polyline points="60,40 65,25 70,55 75,25 80,55 85,25 90,55 95,25 100,40" fill="none" stroke="#f59e0b" stroke-width="2"/>
+                <line x1="100" y1="40" x2="140" y2="40" stroke="#555" stroke-width="2"/>
+                <line x1="140" y1="15" x2="140" y2="65" stroke="#10b981" stroke-width="3"/>
+                <line x1="155" y1="15" x2="155" y2="65" stroke="#10b981" stroke-width="3"/>
+                <line x1="155" y1="40" x2="200" y2="40" stroke="#555" stroke-width="2"/>
+                <line x1="200" y1="40" x2="200" y2="90" stroke="#555" stroke-width="2"/>
+                <line x1="200" y1="90" x2="10" y2="90" stroke="#555" stroke-width="2"/>
+                <line x1="10" y1="90" x2="10" y2="40" stroke="#555" stroke-width="2"/>
+                <text x="80" y="15" fill="#f59e0b" font-size="12" text-anchor="middle">R</text>
+                <text x="148" y="85" fill="#10b981" font-size="12" text-anchor="middle">C</text>
+                <text x="215" y="45" fill="#10b981" font-size="10" text-anchor="end">Vc</text>
+            </svg>
+
+            <div class="rc-control">
+                <label>Voltaje (V₀): <span id="rcVVal">5.0 V</span></label>
+                <input type="range" id="rcV" min="0.5" max="15" step="0.1" value="5">
+            </div>
+            <div class="rc-control">
+                <label>Resistencia (R): <span id="rcRVal">10 kΩ</span></label>
+                <input type="range" id="rcR" min="1" max="100" step="1" value="10">
+            </div>
+            <div class="rc-control">
+                <label>Capacitancia (C): <span id="rcCVal">10 µF</span></label>
+                <input type="range" id="rcC" min="1" max="100" step="1" value="10">
+            </div>
+            <div class="rc-control">
+                <label>Frec. Conmutación: <span id="rcFVal">2.0 Hz</span></label>
+                <input type="range" id="rcF" min="0.2" max="10" step="0.1" value="2">
+            </div>
+
+            <div class="rc-info">
+                τ = <span id="rcTauDisplay">0.100 s</span>
+            </div>
+
+            <div class="rc-channels">
+                <button class="rc-ch-btn" id="rcToCH1Btn" onclick="toggleChannelRC(1)">CH1: Gen</button>
+                <button class="rc-ch-btn" id="rcToCH2Btn" onclick="toggleChannelRC(2)">CH2: Gen</button>
+            </div>
+            
+            <div class="rc-hint">Ajusta el Time/Div en el osciloscopio para ver el ciclo.</div>
         </div>
 
         <!-- GENERADOR LEYBOLD -->
@@ -670,40 +477,26 @@
                 <button class="gen-ch-btn active-ch1" id="genCh1" onclick="setGeneratorTarget(1)">CH1</button>
                 <button class="gen-ch-btn" id="genCh2" onclick="setGeneratorTarget(2)">CH2</button>
             </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 11px; color: #555; font-weight: bold;">
-                <span>LEYBOLD®</span>
-                <span>522 621<br>FUNKTIONSGENERATOR S 12</span>
-            </div>
         </div>
     </div>
 
     <script>
-        const state = {
-            ch1Connected: false,
-            ch2Connected: false,
-            isRunning: true,
-            activeChannel: 1,
-            
-            ch1: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 2.0, freq: 1.0, mult: 1000, wave: 'sine', offset: 1.0 },
-            ch2: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 1.0, freq: 0.5, mult: 100, wave: 'square', offset: -1.0 },
-            
-            timeDiv: 0.0005,
-            posX: 0,
-            trigLevel: 0,
-            time: 0,
-            
-            genTarget: 1,
-            activeMenu: 'ch1',
-            
-            cursor: {
-                active: false,
-                type: 'Voltage',
-                source: 1,
-                c1: 150,
-                c2: 300
-            }
+        // --- ESTADO GLOBAL ---
+        const defaultState = {
+            ch1Connected: false, ch2Connected: false, isRunning: true, activeChannel: 1,
+            ch1: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 2.0, freq: 1.0, mult: 1000, wave: 'sine', offset: 1.0, source: 'gen' },
+            ch2: { voltsDiv: 1.0, posY: 0, coupling: 'DC', probe: 1, invert: false, amp: 1.0, freq: 0.5, mult: 100, wave: 'square', offset: -1.0, source: 'gen' },
+            timeDiv: 0.0005, posX: 0, trigLevel: 0, time: 0,
+            genTarget: 1, activeMenu: 'ch1',
+            cursor: { active: false, type: 'Voltage', source: 1, c1: 150, c2: 300 }
         };
+
+        const defaultRCState = {
+            v0: 5.0, r: 10000, c: 10e-6, freq: 2.0, visible: false
+        };
+
+        let state = JSON.parse(JSON.stringify(defaultState));
+        let rcState = JSON.parse(JSON.stringify(defaultRCState));
 
         const canvas = document.getElementById('scopeCanvas');
         const ctx = canvas.getContext('2d');
@@ -717,19 +510,136 @@
         const measureBox = document.getElementById('measure-box');
         const labels = [document.getElementById('sk1'), document.getElementById('sk2'), document.getElementById('sk3'), document.getElementById('sk4'), document.getElementById('sk5')];
 
-        // Función auxiliar para coordenadas absolutas
+        // --- FUNCIÓN DE VOLTAJE RC ---
+        function getRCVoltage(t) {
+            const tau = rcState.r * rcState.c;
+            const T = 1 / rcState.freq;
+            const phase = (((t % T) + T) % T) / T; 
+            
+            const u = Math.exp(-T / (2 * tau));
+            const vMax = rcState.v0 / (1 + u);
+            const vMin = vMax * u;
+
+            if (phase < 0.5) {
+                const tInPhase = phase * T;
+                return rcState.v0 + (vMin - rcState.v0) * Math.exp(-tInPhase / tau);
+            } else {
+                const tInPhase = (phase - 0.5) * T;
+                return vMax * Math.exp(-tInPhase / tau);
+            }
+        }
+
+        function updateRCDisplay() {
+            const tau = rcState.r * rcState.c;
+            document.getElementById('rcTauDisplay').innerText = (tau >= 1 ? tau.toFixed(2) + ' s' : (tau * 1000).toFixed(1) + ' ms');
+            document.getElementById('rcVVal').innerText = rcState.v0.toFixed(1) + ' V';
+            document.getElementById('rcRVal').innerText = (rcState.r / 1000).toFixed(0) + ' kΩ';
+            document.getElementById('rcCVal').innerText = (rcState.c * 1e6).toFixed(0) + ' µF';
+            document.getElementById('rcFVal').innerText = rcState.freq.toFixed(1) + ' Hz';
+        }
+
+        // --- CONTROLES DEL CIRCUITO RC ---
+        document.getElementById('rcV').addEventListener('input', (e) => { rcState.v0 = parseFloat(e.target.value); updateRCDisplay(); });
+        document.getElementById('rcR').addEventListener('input', (e) => { rcState.r = parseFloat(e.target.value) * 1000; updateRCDisplay(); });
+        document.getElementById('rcC').addEventListener('input', (e) => { rcState.c = parseFloat(e.target.value) * 1e-6; updateRCDisplay(); });
+        document.getElementById('rcF').addEventListener('input', (e) => { rcState.freq = parseFloat(e.target.value); updateRCDisplay(); });
+
+        function toggleRCPanel() {
+            rcState.visible = !rcState.visible;
+            document.getElementById('rcPanel').style.display = rcState.visible ? 'flex' : 'none';
+            if (rcState.visible) updateRCDisplay();
+        }
+
+        function toggleChannelRC(ch) {
+            const chData = ch === 1 ? state.ch1 : state.ch2;
+            chData.source = chData.source === 'gen' ? 'rc' : 'gen';
+            
+            const btn = document.getElementById('rcToCH' + ch + 'Btn');
+            if (chData.source === 'rc') {
+                btn.innerText = `CH${ch}: RC`;
+                btn.classList.add('active-rc');
+            } else {
+                btn.innerText = `CH${ch}: Gen`;
+                btn.classList.remove('active-rc');
+            }
+            updateLabels();
+        }
+
+        // --- REINICIO TOTAL ---
+        function resetAll() {
+            // 1. Reiniciar estados lógicos
+            state = JSON.parse(JSON.stringify(defaultState));
+            rcState = JSON.parse(JSON.stringify(defaultRCState));
+
+            // 2. Detener tutorial
+            if (tutorialActive) endTutorial();
+
+            // 3. Actualizar UI del Generador
+            document.getElementById('genFreq').value = 1;
+            document.getElementById('genMult').value = 1000;
+            document.getElementById('genAmp').value = 2;
+            document.querySelectorAll('.wave-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.wave === 'sine');
+            });
+
+            // 4. Actualizar UI del Circuito RC
+            document.getElementById('rcPanel').style.display = 'none';
+            document.getElementById('rcV').value = 5;
+            document.getElementById('rcR').value = 10;
+            document.getElementById('rcC').value = 10;
+            document.getElementById('rcF').value = 2;
+            document.getElementById('rcToCH1Btn').innerText = 'CH1: Gen';
+            document.getElementById('rcToCH1Btn').classList.remove('active-rc');
+            document.getElementById('rcToCH2Btn').innerText = 'CH2: Gen';
+            document.getElementById('rcToCH2Btn').classList.remove('active-rc');
+            updateRCDisplay();
+
+            // 5. Mover las sondas de vuelta al generador
+            const redPos = getAbsPos(redTerminal);
+            probe1.style.left = (redPos.left - 50) + 'px';
+            probe1.style.top = (redPos.top + 10) + 'px';
+            probe1.style.borderColor = '#fff';
+
+            probe2.style.left = (redPos.left - 90) + 'px';
+            probe2.style.top = (redPos.top + 10) + 'px';
+            probe2.style.borderColor = '#fff';
+
+            // 6. Reiniciar perillas visuales
+            const resetKnob = (id, val = 0) => {
+                const el = document.getElementById(id);
+                el.dataset.value = val;
+                el.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(${val * 45}deg)`;
+            };
+            resetKnob('knobPosY', 0);
+            resetKnob('knobScaleY', 0); // 1.0V index 3 (3-3=0)
+            resetKnob('knobPosX', 0);
+            resetKnob('knobScaleX', 0); // 0.0005 index 3
+            resetKnob('knobTrigLevel', 0);
+
+            // 7. Actualizar visuales
+            document.getElementById('trig-info').innerText = 'Trig Auto';
+            document.getElementById('runStopBtn').style.background = '';
+            measureBox.style.display = 'none';
+            updateGenKnobs();
+            updateGenDisplay();
+            updateLabels();
+            updateCables();
+            selectChannel(1);
+
+            // 8. Efecto visual en el botón
+            const btn = document.getElementById('resetAllBtn');
+            btn.style.transform = 'rotate(-360deg)';
+            btn.style.transition = 'transform 0.5s ease';
+            setTimeout(() => { btn.style.transform = 'rotate(0deg)'; btn.style.transition = 'none'; }, 500);
+        }
+
+        document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+        document.getElementById('rcToggleBtn').addEventListener('click', toggleRCPanel);
+
+        // --- LÓGICA DE CABLES ---
         function getAbsPos(element) {
             const rect = element.getBoundingClientRect();
-            const scrollX = window.scrollX || window.pageXOffset;
-            const scrollY = window.scrollY || window.pageYOffset;
-            return {
-                left: rect.left + scrollX,
-                top: rect.top + scrollY,
-                width: rect.width,
-                height: rect.height,
-                centerX: rect.left + scrollX + rect.width / 2,
-                centerY: rect.top + scrollY + rect.height / 2
-            };
+            return { left: rect.left + window.scrollX, top: rect.top + window.scrollY, centerX: rect.left + window.scrollX + rect.width / 2, centerY: rect.top + window.scrollY + rect.height / 2 };
         }
 
         function updateCables() {
@@ -737,67 +647,33 @@
             const p1Pos = getAbsPos(probe1);
             const p2Pos = getAbsPos(probe2);
 
-            // Cable CH1
-            const startX1 = redPos.centerX;
-            const startY1 = redPos.centerY;
-            const endX1 = p1Pos.centerX;
-            const endY1 = p1Pos.centerY;
-            const ctrlX1 = (startX1 + endX1) / 2;
-            const ctrlY1 = Math.max(startY1, endY1) + 80;
-            cablePath1.setAttribute('d', `M ${startX1} ${startY1} Q ${ctrlX1} ${ctrlY1} ${endX1} ${endY1}`);
+            const startX1 = redPos.centerX, startY1 = redPos.centerY;
+            const endX1 = p1Pos.centerX, endY1 = p1Pos.centerY;
+            cablePath1.setAttribute('d', `M ${startX1} ${startY1} Q ${(startX1 + endX1)/2} ${Math.max(startY1, endY1) + 80} ${endX1} ${endY1}`);
 
-            // Cable CH2
-            const endX2 = p2Pos.centerX;
-            const endY2 = p2Pos.centerY;
-            const ctrlX2 = (startX1 + endX2) / 2;
-            const ctrlY2 = Math.max(startY1, endY2) + 80;
-            cablePath2.setAttribute('d', `M ${startX1} ${startY1} Q ${ctrlX2} ${ctrlY2} ${endX2} ${endY2}`);
+            const endX2 = p2Pos.centerX, endY2 = p2Pos.centerY;
+            cablePath2.setAttribute('d', `M ${startX1} ${startY1} Q ${(startX1 + endX2)/2} ${Math.max(startY1, endY2) + 80} ${endX2} ${endY2}`);
         }
 
         window.addEventListener('scroll', updateCables);
         window.addEventListener('resize', updateCables);
 
-        function initProbes() {
-            const redPos = getAbsPos(redTerminal);
-            probe1.style.left = (redPos.left - 50) + 'px';
-            probe1.style.top = (redPos.top + 10) + 'px';
-            probe2.style.left = (redPos.left - 90) + 'px';
-            probe2.style.top = (redPos.top + 10) + 'px';
-            updateCables();
-        }
-
         function setupDraggableProbe(probeElement, portElement, channel) {
             let isDragging = false;
-
-            probeElement.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                isDragging = true;
-                probeElement.setPointerCapture(e.pointerId);
-            });
-
+            probeElement.addEventListener('pointerdown', (e) => { e.preventDefault(); isDragging = true; probeElement.setPointerCapture(e.pointerId); });
             probeElement.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
-                e.preventDefault();
-                const scrollX = window.scrollX || window.pageXOffset;
-                const scrollY = window.scrollY || window.pageYOffset;
-                probeElement.style.left = (e.clientX + scrollX - 11) + 'px';
-                probeElement.style.top = (e.clientY + scrollY - 11) + 'px';
+                probeElement.style.left = (e.clientX + window.scrollX - 11) + 'px';
+                probeElement.style.top = (e.clientY + window.scrollY - 11) + 'px';
                 updateCables();
             });
-
             probeElement.addEventListener('pointerup', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                
+                if (!isDragging) return; isDragging = false;
                 const portPos = getAbsPos(portElement);
                 const probePos = getAbsPos(probeElement);
-                
-                const dist = Math.hypot(portPos.centerX - probePos.centerX, portPos.centerY - probePos.centerY);
-
-                if (dist < 60) {
+                if (Math.hypot(portPos.centerX - probePos.centerX, portPos.centerY - probePos.centerY) < 60) {
                     if (channel === 1) state.ch1Connected = true; else state.ch2Connected = true;
-                    probeElement.style.left = (portPos.centerX - 11) + 'px';
-                    probeElement.style.top = (portPos.centerY - 11) + 'px';
+                    probeElement.style.left = (portPos.centerX - 11) + 'px'; probeElement.style.top = (portPos.centerY - 11) + 'px';
                     probeElement.style.borderColor = 'transparent';
                     autoSet();
                 } else {
@@ -807,226 +683,129 @@
                 updateCables();
                 checkTutorialProgress();
             });
-
-            probeElement.addEventListener('pointercancel', () => {
-                isDragging = false;
-            });
+            probeElement.addEventListener('pointercancel', () => { isDragging = false; });
         }
 
         setupDraggableProbe(probe1, bnc1, 1);
         setupDraggableProbe(probe2, bnc2, 2);
 
+        // --- GENERADOR ---
         function setGeneratorTarget(ch) {
             state.genTarget = ch;
             document.getElementById('genCh1').classList.toggle('active-ch1', ch === 1);
             document.getElementById('genCh1').classList.toggle('active-ch2', ch === 2);
             document.getElementById('genCh2').classList.toggle('active-ch1', ch === 1);
             document.getElementById('genCh2').classList.toggle('active-ch2', ch === 2);
-            
             const chData = ch === 1 ? state.ch1 : state.ch2;
             document.getElementById('genFreq').value = chData.freq;
             document.getElementById('genMult').value = chData.mult;
             document.getElementById('genAmp').value = chData.amp;
-            
-            document.querySelectorAll('.wave-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.wave === chData.wave);
-            });
-
-            updateGenKnobs();
-            updateGenDisplay();
+            document.querySelectorAll('.wave-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.wave === chData.wave));
+            updateGenKnobs(); updateGenDisplay();
         }
 
-        document.getElementById('genFreq').addEventListener('input', (e) => {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            chData.freq = parseFloat(e.target.value);
-            updateGenKnobs();
-            updateGenDisplay();
-        });
-        document.getElementById('genMult').addEventListener('change', (e) => {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            chData.mult = parseFloat(e.target.value);
-            updateGenKnobs();
-            updateGenDisplay();
-        });
-        document.getElementById('genAmp').addEventListener('input', (e) => {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            chData.amp = parseFloat(e.target.value);
-            updateGenKnobs();
-            updateGenDisplay();
-        });
+        document.getElementById('genFreq').addEventListener('input', (e) => { const d = state.genTarget === 1 ? state.ch1 : state.ch2; d.freq = parseFloat(e.target.value); updateGenKnobs(); updateGenDisplay(); });
+        document.getElementById('genMult').addEventListener('change', (e) => { const d = state.genTarget === 1 ? state.ch1 : state.ch2; d.mult = parseFloat(e.target.value); updateGenKnobs(); updateGenDisplay(); });
+        document.getElementById('genAmp').addEventListener('input', (e) => { const d = state.genTarget === 1 ? state.ch1 : state.ch2; d.amp = parseFloat(e.target.value); updateGenKnobs(); updateGenDisplay(); });
 
         function setWave(type) {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            chData.wave = type;
+            const d = state.genTarget === 1 ? state.ch1 : state.ch2;
+            d.wave = type;
             document.querySelectorAll('.wave-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.wave === type));
         }
 
         function updateGenKnobs() {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            const angleFreq = -135 + ((chData.freq - 1) / 9) * 270;
-            document.getElementById('genKnobFreq').style.transform = `rotate(${angleFreq}deg)`;
-            const angleAmp = -135 + ((chData.amp - 0.1) / 9.9) * 270;
-            document.getElementById('genKnobAmp').style.transform = `rotate(${angleAmp}deg)`;
+            const d = state.genTarget === 1 ? state.ch1 : state.ch2;
+            document.getElementById('genKnobFreq').style.transform = `rotate(${-135 + ((d.freq - 1) / 9) * 270}deg)`;
+            document.getElementById('genKnobAmp').style.transform = `rotate(${-135 + ((d.amp - 0.1) / 9.9) * 270}deg)`;
         }
 
         function updateGenDisplay() {
-            const chData = state.genTarget === 1 ? state.ch1 : state.ch2;
-            const freq = chData.freq * chData.mult;
-            const vpp = chData.amp * 2;
-            
+            const d = state.genTarget === 1 ? state.ch1 : state.ch2;
+            const freq = d.freq * d.mult;
             let fStr = freq >= 1000 ? (freq/1000).toFixed(2) + ' kHz' : freq.toFixed(1) + ' Hz';
             document.getElementById('genDisplayFreq').innerText = `f: ${fStr}`;
-            document.getElementById('genDisplayVolt').innerText = `Vpp: ${vpp.toFixed(2)} V`;
+            document.getElementById('genDisplayVolt').innerText = `Vpp: ${(d.amp * 2).toFixed(2)} V`;
         }
 
+        // --- PERILLAS ---
         function makeKnobInteractive(knobElement, onChange) {
             let startY = 0, startValue = 0;
-            knobElement.addEventListener('pointerdown', (e) => {
-                if (e.pointerType === 'touch') e.preventDefault(); 
-                startY = e.clientY;
-                startValue = knobElement.dataset.value ? parseFloat(knobElement.dataset.value) : 0;
-                knobElement.setPointerCapture(e.pointerId);
-            });
-            
+            knobElement.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') e.preventDefault(); startY = e.clientY; startValue = knobElement.dataset.value ? parseFloat(knobElement.dataset.value) : 0; knobElement.setPointerCapture(e.pointerId); });
             knobElement.addEventListener('pointermove', (e) => {
                 if (!knobElement.hasPointerCapture(e.pointerId)) return;
                 const deltaY = startY - e.clientY;
                 const sensitivity = e.pointerType === 'touch' ? 0.1 : 0.05;
-                const newValue = startValue + (deltaY * sensitivity);
-                
-                const actualValue = onChange(newValue);
-                
-                const angle = actualValue * 45;
-                knobElement.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(${angle}deg)`;
+                const actualValue = onChange(startValue + (deltaY * sensitivity));
+                knobElement.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(${actualValue * 45}deg)`;
                 knobElement.dataset.value = actualValue;
-            });
-
-            knobElement.addEventListener('pointercancel', () => {
-                // Reset if needed
             });
         }
 
-        makeKnobInteractive(document.getElementById('knobPosY'), (val) => {
-            const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
-            ch.posY = Math.max(-5, Math.min(5, val));
-            return ch.posY;
-        });
+        makeKnobInteractive(document.getElementById('knobPosY'), (val) => { const ch = state.activeChannel === 1 ? state.ch1 : state.ch2; ch.posY = Math.max(-5, Math.min(5, val)); return ch.posY; });
+        makeKnobInteractive(document.getElementById('knobScaleY'), (val) => { const steps = [0.1, 0.2, 0.5, 1, 2, 5]; let idx = Math.max(0, Math.min(steps.length - 1, Math.round(val + 3))); const ch = state.activeChannel === 1 ? state.ch1 : state.ch2; ch.voltsDiv = steps[idx]; updateLabels(); return idx - 3; });
+        makeKnobInteractive(document.getElementById('knobPosX'), (val) => { state.posX = Math.max(-5, Math.min(5, val)); return state.posX; });
+        makeKnobInteractive(document.getElementById('knobScaleX'), (val) => { const steps = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5]; let idx = Math.max(0, Math.min(steps.length - 1, Math.round(val + 3))); state.timeDiv = steps[idx]; updateLabels(); return idx - 3; });
+        makeKnobInteractive(document.getElementById('knobTrigLevel'), (val) => { state.trigLevel = Math.max(-5, Math.min(5, val)); return state.trigLevel; });
 
-        makeKnobInteractive(document.getElementById('knobScaleY'), (val) => {
-            const steps = [0.1, 0.2, 0.5, 1, 2, 5];
-            let idx = Math.round(val + 3); 
-            idx = Math.max(0, Math.min(steps.length - 1, idx));
-            const ch = state.activeChannel === 1 ? state.ch1 : state.ch2;
-            ch.voltsDiv = steps[idx];
-            updateLabels();
-            return idx - 3;
-        });
-
-        makeKnobInteractive(document.getElementById('knobPosX'), (val) => {
-            state.posX = Math.max(-5, Math.min(5, val));
-            return state.posX;
-        });
-        
-        makeKnobInteractive(document.getElementById('knobScaleX'), (val) => {
-            const steps = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01];
-            let idx = Math.round(val + 3);
-            idx = Math.max(0, Math.min(steps.length - 1, idx));
-            state.timeDiv = steps[idx];
-            updateLabels();
-            return idx - 3;
-        });
-
-        makeKnobInteractive(document.getElementById('knobTrigLevel'), (val) => {
-            state.trigLevel = Math.max(-5, Math.min(5, val));
-            return state.trigLevel;
-        });
-
+        // --- CURSORES ---
         let draggingCursor = 0;
-
         canvas.addEventListener('pointerdown', (e) => {
-            if (!state.cursor.active) return;
-            if (e.pointerType === 'touch') e.preventDefault();
-            
+            if (!state.cursor.active) return; if (e.pointerType === 'touch') e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height), x = (e.clientX - rect.left) * (canvas.width / rect.width);
             if (state.cursor.type === 'Voltage') {
-                if (Math.abs(y - state.cursor.c1) < 30) draggingCursor = 1;
-                else if (Math.abs(y - state.cursor.c2) < 30) draggingCursor = 2;
+                if (Math.abs(y - state.cursor.c1) < 30) draggingCursor = 1; else if (Math.abs(y - state.cursor.c2) < 30) draggingCursor = 2;
             } else {
-                if (Math.abs(x - state.cursor.c1) < 30) draggingCursor = 1;
-                else if (Math.abs(x - state.cursor.c2) < 30) draggingCursor = 2;
+                if (Math.abs(x - state.cursor.c1) < 30) draggingCursor = 1; else if (Math.abs(x - state.cursor.c2) < 30) draggingCursor = 2;
             }
-            if (draggingCursor) {
-                canvas.setPointerCapture(e.pointerId);
-                checkTutorialProgress(); // Avanzar si el usuario toca el canvas en el paso del tutorial
-            }
+            if (draggingCursor) { canvas.setPointerCapture(e.pointerId); checkTutorialProgress(); }
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (!draggingCursor) return;
             const rect = canvas.getBoundingClientRect();
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height), x = (e.clientX - rect.left) * (canvas.width / rect.width);
             if (state.cursor.type === 'Voltage') {
                 let newY = Math.max(0, Math.min(canvas.height, y));
-                if (draggingCursor === 1) state.cursor.c1 = newY;
-                else state.cursor.c2 = newY;
+                if (draggingCursor === 1) state.cursor.c1 = newY; else state.cursor.c2 = newY;
             } else {
                 let newX = Math.max(0, Math.min(canvas.width, x));
-                if (draggingCursor === 1) state.cursor.c1 = newX;
-                else state.cursor.c2 = newX;
+                if (draggingCursor === 1) state.cursor.c1 = newX; else state.cursor.c2 = newX;
             }
             updateCursorReadout();
         });
 
-        canvas.addEventListener('pointerup', (e) => {
-            draggingCursor = 0;
-            canvas.releasePointerCapture(e.pointerId);
-        });
+        canvas.addEventListener('pointerup', (e) => { draggingCursor = 0; canvas.releasePointerCapture(e.pointerId); });
 
+        // --- AUTO, RUN/STOP, TRIGGER ---
         function autoSet() {
             if (!state.ch1Connected && !state.ch2Connected) return;
-            const freq = state.ch1.freq * state.ch1.mult;
-            const period = 1 / freq;
-            state.timeDiv = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02].reduce((p, c) => Math.abs(c - period/2) < Math.abs(p - period/2) ? c : p);
-            updateLabels();
-            checkTutorialProgress(); // AutoSet cuenta como acción
+            
+            let useRC = (state.ch1Connected && state.ch1.source === 'rc') || (state.ch2Connected && state.ch2.source === 'rc');
+            
+            if (useRC) {
+                state.timeDiv = Math.max(0.0001, (1 / rcState.freq) / 5);
+                if (state.ch1Connected && state.ch1.source === 'rc') state.ch1.voltsDiv = [0.5, 1, 2, 5, 10].reduce((p, c) => Math.abs(c - rcState.v0/3) < Math.abs(p - rcState.v0/3) ? c : p);
+                if (state.ch2Connected && state.ch2.source === 'rc') state.ch2.voltsDiv = [0.5, 1, 2, 5, 10].reduce((p, c) => Math.abs(c - rcState.v0/3) < Math.abs(p - rcState.v0/3) ? c : p);
+            } else {
+                const period = 1 / (state.ch1.freq * state.ch1.mult);
+                state.timeDiv = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01].reduce((p, c) => Math.abs(c - period/2) < Math.abs(p - period/2) ? c : p);
+            }
+            updateLabels(); checkTutorialProgress();
         }
 
         function toggleRunStop() {
             state.isRunning = !state.isRunning;
             document.getElementById('runStopBtn').style.background = state.isRunning ? '' : '#ffaaaa';
             document.getElementById('trig-info').innerText = state.isRunning ? 'Trig Auto' : 'Trig Stop';
+            checkTutorialProgress();
         }
 
-        function forceTrigger() {
-            state.time += 0.005;
-            document.getElementById('trig-info').innerText = 'Trig Forced';
-            setTimeout(() => { document.getElementById('trig-info').innerText = state.isRunning ? 'Trig Auto' : 'Trig Stop'; }, 1000);
-        }
-
-        function trigger50() {
-            state.trigLevel = 0;
-            const knobTrig = document.getElementById('knobTrigLevel');
-            knobTrig.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(0deg)`;
-            knobTrig.dataset.value = 0;
-        }
-
-        function selectChannel(ch) {
-            state.activeChannel = ch;
-            document.getElementById('ch1Btn').classList.toggle('active', ch === 1);
-            document.getElementById('ch2Btn').classList.toggle('active', ch === 2);
-            changeMenu(ch === 1 ? 'ch1' : 'ch2');
-        }
-
-        function changeMenu(menu) {
-            state.activeMenu = menu;
-            updateSoftKeyTexts();
-            checkTutorialProgress(); // El cambio de menú avanza el tutorial
-        }
+        function forceTrigger() { state.time += 0.005; document.getElementById('trig-info').innerText = 'Trig Forced'; setTimeout(() => { document.getElementById('trig-info').innerText = state.isRunning ? 'Trig Auto' : 'Trig Stop'; }, 1000); }
+        function trigger50() { state.trigLevel = 0; const k = document.getElementById('knobTrigLevel'); k.querySelector('.knob-indicator').style.transform = `translateX(-50%) rotate(0deg)`; k.dataset.value = 0; }
+        function selectChannel(ch) { state.activeChannel = ch; document.getElementById('ch1Btn').classList.toggle('active', ch === 1); document.getElementById('ch2Btn').classList.toggle('active', ch === 2); changeMenu(ch === 1 ? 'ch1' : 'ch2'); }
+        function changeMenu(menu) { state.activeMenu = menu; updateSoftKeyTexts(); checkTutorialProgress(); }
 
         function updateSoftKeyTexts() {
             labels.forEach(l => l.innerText = "");
@@ -1036,11 +815,10 @@
                 labels[1].innerText = `BW Limit OFF`;
                 labels[2].innerText = `Probe ${ch.probe}X`;
                 labels[3].innerText = `Invert ${ch.invert ? 'ON' : 'OFF'}`;
+                labels[4].innerText = `Fuente: ${ch.source === 'gen' ? 'Gen' : 'RC'}`;
             } else if (state.activeMenu === 'cursor') {
-                labels[0].innerText = `Mode Manual`;
-                labels[1].innerText = `Type ${state.cursor.type}`;
-                labels[2].innerText = `Source CH${state.cursor.source}`;
-                labels[3].innerText = state.cursor.active ? `Clear` : `Display`;
+                labels[0].innerText = `Mode Manual`; labels[1].innerText = `Type ${state.cursor.type}`;
+                labels[2].innerText = `Source CH${state.cursor.source}`; labels[3].innerText = state.cursor.active ? `Clear` : `Display`;
             }
         }
 
@@ -1050,20 +828,16 @@
                 if (key === 1) { ch.coupling = ch.coupling === 'DC' ? 'AC' : (ch.coupling === 'AC' ? 'GND' : 'DC'); }
                 if (key === 3) { ch.probe = ch.probe === 1 ? 10 : (ch.probe === 10 ? 100 : 1); }
                 if (key === 4) { ch.invert = !ch.invert; }
+                if (key === 5) { toggleChannelRC(state.activeMenu === 'ch1' ? 1 : 2); }
                 updateSoftKeyTexts();
             } else if (state.activeMenu === 'cursor') {
                 if (key === 2) {
                     state.cursor.type = state.cursor.type === 'Voltage' ? 'Time' : 'Voltage';
-                    if (state.cursor.type === 'Voltage') { state.cursor.c1 = 250; state.cursor.c2 = 500; }
-                    else { state.cursor.c1 = 300; state.cursor.c2 = 700; }
+                    if (state.cursor.type === 'Voltage') { state.cursor.c1 = 250; state.cursor.c2 = 500; } else { state.cursor.c1 = 300; state.cursor.c2 = 700; }
                 }
                 if (key === 3) { state.cursor.source = state.cursor.source === 1 ? 2 : 1; }
-                if (key === 4) {
-                    state.cursor.active = !state.cursor.active;
-                    if (state.cursor.active) measureBox.style.display = 'block';
-                    else measureBox.style.display = 'none';
-                }
-                updateSoftKeyTexts();
+                if (key === 4) { state.cursor.active = !state.cursor.active; measureBox.style.display = state.cursor.active ? 'block' : 'none'; }
+                updateSoftKeyTexts(); checkTutorialProgress();
             }
         }
 
@@ -1072,10 +846,10 @@
             document.getElementById('time-info').innerText = `Time ${tStr}`;
             
             let v1Str = state.ch1.voltsDiv >= 1 ? state.ch1.voltsDiv.toFixed(2) + 'V' : (state.ch1.voltsDiv * 1000).toFixed(0) + 'mV';
-            document.getElementById('ch1-info').innerText = `CH1 ${v1Str}`;
+            document.getElementById('ch1-info').innerText = `CH1 ${v1Str}${state.ch1.source === 'rc' ? ' [RC]' : ''}`;
             
             let v2Str = state.ch2.voltsDiv >= 1 ? state.ch2.voltsDiv.toFixed(2) + 'V' : (state.ch2.voltsDiv * 1000).toFixed(0) + 'mV';
-            document.getElementById('ch2-info').innerText = `CH2 ${v2Str}`;
+            document.getElementById('ch2-info').innerText = `CH2 ${v2Str}${state.ch2.source === 'rc' ? ' [RC]' : ''}`;
         }
 
         function getWaveValue(t, chData) {
@@ -1091,204 +865,89 @@
 
         function updateCursorReadout() {
             if (!state.cursor.active) return;
-            const w = canvas.width;
-            const h = canvas.height;
+            const w = canvas.width, h = canvas.height;
             const ch = state.cursor.source === 1 ? state.ch1 : state.ch2;
-            const pxDivY = h / 8;
-            const pxDivX = w / 10;
+            const pxDivY = h / 8, pxDivX = w / 10;
 
             if (state.cursor.type === 'Voltage') {
                 const v1 = ((h/2 - state.cursor.c1) / pxDivY - ch.posY) * ch.voltsDiv;
                 const v2 = ((h/2 - state.cursor.c2) / pxDivY - ch.posY) * ch.voltsDiv;
-                const deltaV = Math.abs(v1 - v2);
-                measureBox.innerHTML = `CH${state.cursor.source} Cursor 1: ${v1.toFixed(2)} V<br>
-                                        CH${state.cursor.source} Cursor 2: ${v2.toFixed(2)} V<br>
-                                        <span style="color:#ff3333; font-weight:bold;">ΔV: ${deltaV.toFixed(2)} V</span>`;
+                measureBox.innerHTML = `CH${state.cursor.source} Cursor 1: ${v1.toFixed(2)} V<br>CH${state.cursor.source} Cursor 2: ${v2.toFixed(2)} V<br><span style="color:#ff3333; font-weight:bold;">ΔV: ${Math.abs(v1 - v2).toFixed(2)} V</span>`;
             } else {
                 const t1 = (state.cursor.c1 / pxDivX + state.posX) * state.timeDiv;
                 const t2 = (state.cursor.c2 / pxDivX + state.posX) * state.timeDiv;
-                const deltaT = Math.abs(t1 - t2);
-                const freq = deltaT > 0 ? 1 / deltaT : 0;
-                let fStr = freq >= 1000 ? (freq/1000).toFixed(2) + ' kHz' : freq.toFixed(1) + ' Hz';
-                
-                measureBox.innerHTML = `CH${state.cursor.source} Cursor 1: ${(t1*1000).toFixed(2)} ms<br>
-                                        CH${state.cursor.source} Cursor 2: ${(t2*1000).toFixed(2)} ms<br>
-                                        <span style="color:#ff3333; font-weight:bold;">ΔT: ${(deltaT*1000).toFixed(2)} ms</span><br>
-                                        <span style="color:#ff3333; font-weight:bold;">Δf: ${fStr}</span>`;
+                const deltaT = Math.abs(t1 - t2), freq = deltaT > 0 ? 1 / deltaT : 0;
+                measureBox.innerHTML = `CH${state.cursor.source} Cursor 1: ${(t1*1000).toFixed(2)} ms<br>CH${state.cursor.source} Cursor 2: ${(t2*1000).toFixed(2)} ms<br><span style="color:#ff3333; font-weight:bold;">ΔT: ${(deltaT*1000).toFixed(2)} ms</span><br><span style="color:#ff3333; font-weight:bold;">Δf: ${freq >= 1000 ? (freq/1000).toFixed(2) + ' kHz' : freq.toFixed(1) + ' Hz'}</span>`;
             }
         }
 
-        // ==========================================
-        // SISTEMA DE TUTORIAL INTERACTIVO
-        // ==========================================
+        // --- SISTEMA DE TUTORIAL ---
         const tutorialSteps = [
-            {
-                title: "Paso 1: Conecta la sonda CH1",
-                text: "Arrastra el cable rojo (sonda 1) desde el generador hasta la entrada CH1 del osciloscopio.",
-                target: '#probe1',
-                condition: () => state.ch1Connected,
-            },
-            {
-                title: "Paso 2: Conecta la sonda CH2",
-                text: "Arrastra el cable azul (sonda 2) desde el generador hasta la entrada CH2 del osciloscopio.",
-                target: '#probe2',
-                condition: () => state.ch2Connected,
-            },
-            {
-                title: "Paso 3: Ajusta el Generador",
-                text: "Cambia la frecuencia o amplitud en el generador. Verás cómo afecta a la señal.",
-                target: '#leyboldGen',
-                condition: null, // El usuario pulsa Siguiente
-            },
-            {
-                title: "Paso 4: Ajuste Automático",
-                text: "Pulsa el botón AUTO para configurar el osciloscopio y ver la onda correctamente.",
-                target: '#autoBtn',
-                condition: null, // El usuario pulsa Siguiente
-            },
-            {
-                title: "Paso 5: Herramienta Cursor",
-                text: "Pulsa el botón 'Cursor' en el panel superior para activar las líneas de medición.",
-                target: '#cursorBtn',
-                condition: () => state.activeMenu === 'cursor',
-            },
-            {
-                title: "Paso 6: Mueve los Cursores",
-                text: "Haz clic en 'Display' en los botones laterales, luego arrastra las líneas rojas en la pantalla.",
-                target: '#scopeCanvas',
-                condition: null, // Termina aquí
-            }
+            { title: "Paso 1: Conecta CH1", text: "Arrastra el cable rojo desde el generador hasta la entrada CH1.", target: '#probe1', condition: () => state.ch1Connected },
+            { title: "Paso 2: Conecta CH2", text: "Arrastra el cable azul hasta la entrada CH2.", target: '#probe2', condition: () => state.ch2Connected },
+            { title: "Paso 3: Ajusta Generador", text: "Cambia la frecuencia o amplitud en el generador.", target: '#leyboldGen', condition: null },
+            { title: "Paso 4: AUTO", text: "Pulsa el botón AUTO para configurar el osciloscopio.", target: '#autoBtn', condition: null },
+            { title: "Paso 5: Cursor", text: "Pulsa 'Cursor' para activar el menú de medición.", target: '#cursorBtn', condition: () => state.activeMenu === 'cursor' },
+            { title: "Paso 6: Display", text: "Pulsa el botón lateral 4 (Display) para ver los cursores.", target: '#softKey4', condition: () => state.cursor.active },
+            { title: "Paso 7: Pausar", text: "Pulsa RUN/STOP para congelar la señal.", target: '#runStopBtn', condition: () => !state.isRunning },
+            { title: "Paso 8: Tipo Tiempo", text: "Pulsa el botón lateral 2 (Type) para cambiar a Tiempo.", target: '#softKey2', condition: () => state.cursor.type === 'Time' },
+            { title: "Paso 9: Mueve Cursores", text: "Arrastra las líneas rojas en la pantalla.", target: '#scopeCanvas', condition: null }
         ];
 
-        let currentTutorialStep = 0;
-        let tutorialActive = false;
-        let isTransitioning = false;
+        let currentTutorialStep = 0, tutorialActive = false, isTransitioning = false;
+        const spotlight = document.getElementById('spotlight'), tutBox = document.getElementById('tutorialBox'), tutTitle = document.getElementById('tutTitle'), tutText = document.getElementById('tutText'), tutBtn = document.getElementById('tutNext'), tutSkip = document.getElementById('tutSkip');
 
-        const spotlight = document.getElementById('spotlight');
-        const tutBox = document.getElementById('tutorialBox');
-        const tutTitle = document.getElementById('tutTitle');
-        const tutText = document.getElementById('tutText');
-        const tutBtn = document.getElementById('tutNext');
-        const tutSkip = document.getElementById('tutSkip');
-
-        function startTutorial() {
-            currentTutorialStep = 0;
-            tutorialActive = true;
-            spotlight.style.display = 'block';
-            tutBox.style.display = 'block';
-            showTutorialStep();
-        }
-
-        function endTutorial() {
-            tutorialActive = false;
-            spotlight.style.display = 'none';
-            tutBox.style.display = 'none';
-        }
+        function startTutorial() { currentTutorialStep = 0; tutorialActive = true; spotlight.style.display = 'block'; tutBox.style.display = 'block'; showTutorialStep(); }
+        function endTutorial() { tutorialActive = false; spotlight.style.display = 'none'; tutBox.style.display = 'none'; }
 
         function showTutorialStep() {
-            if (currentTutorialStep >= tutorialSteps.length) {
-                endTutorial();
-                return;
-            }
-
+            if (currentTutorialStep >= tutorialSteps.length) { endTutorial(); return; }
             const step = tutorialSteps[currentTutorialStep];
-            
-            tutTitle.innerText = step.title;
-            tutText.innerText = step.text;
-            tutBox.classList.remove('step-success');
-            
+            tutTitle.innerText = step.title; tutText.innerText = step.text; tutBox.classList.remove('step-success');
             tutBtn.style.display = step.condition ? 'none' : 'block';
             tutBtn.innerText = (currentTutorialStep === tutorialSteps.length - 1) ? "Finalizar" : "Siguiente";
-            
             const targetEl = document.querySelector(step.target);
-            if (targetEl) {
-                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                setTimeout(() => positionTutorialElements(targetEl), 300);
-            }
+            if (targetEl) { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); setTimeout(() => positionTutorialElements(targetEl), 300); }
         }
 
         function positionTutorialElements(targetEl) {
-            const rect = targetEl.getBoundingClientRect();
-            const padding = 10;
-
-            spotlight.style.width = (rect.width + padding * 2) + 'px';
-            spotlight.style.height = (rect.height + padding * 2) + 'px';
-            spotlight.style.left = (rect.left - padding) + 'px';
-            spotlight.style.top = (rect.top - padding) + 'px';
-
-            const boxW = tutBox.offsetWidth || 280;
-            const boxH = tutBox.offsetHeight || 150;
-            const margin = 15;
-
-            let boxTop;
-            if (rect.top < window.innerHeight / 2) {
-                boxTop = window.innerHeight - boxH - margin;
-            } else {
-                boxTop = margin;
-            }
-
+            const rect = targetEl.getBoundingClientRect(), padding = 10;
+            spotlight.style.width = (rect.width + padding * 2) + 'px'; spotlight.style.height = (rect.height + padding * 2) + 'px';
+            spotlight.style.left = (rect.left - padding) + 'px'; spotlight.style.top = (rect.top - padding) + 'px';
+            const boxW = tutBox.offsetWidth || 280, boxH = tutBox.offsetHeight || 150, margin = 15;
+            let boxTop = rect.top < window.innerHeight / 2 ? window.innerHeight - boxH - margin : margin;
             let boxLeft = (window.innerWidth - boxW) / 2;
-            if (boxLeft < margin) boxLeft = margin;
-            if (boxLeft + boxW > window.innerWidth - margin) {
-                boxLeft = window.innerWidth - boxW - margin;
-            }
-
-            tutBox.style.top = boxTop + 'px';
-            tutBox.style.left = boxLeft + 'px';
+            boxLeft = Math.max(margin, Math.min(boxLeft, window.innerWidth - boxW - margin));
+            tutBox.style.top = boxTop + 'px'; tutBox.style.left = boxLeft + 'px';
         }
 
         function checkTutorialProgress() {
             if (!tutorialActive || isTransitioning) return;
-            
             const step = tutorialSteps[currentTutorialStep];
             if (step && step.condition && step.condition()) {
-                isTransitioning = true;
-                tutBox.classList.add('step-success');
-                tutText.innerText = "¡Excelente! Avanzando...";
-
-                setTimeout(() => {
-                    currentTutorialStep++;
-                    isTransitioning = false;
-                    showTutorialStep();
-                }, 800);
+                isTransitioning = true; tutBox.classList.add('step-success'); tutText.innerText = "¡Excelente! Avanzando...";
+                setTimeout(() => { currentTutorialStep++; isTransitioning = false; showTutorialStep(); }, 800);
             }
         }
 
-        tutBtn.addEventListener('click', () => {
-            if (isTransitioning) return;
-            currentTutorialStep++;
-            showTutorialStep();
-        });
-
+        tutBtn.addEventListener('click', () => { if (isTransitioning) return; currentTutorialStep++; showTutorialStep(); });
         tutSkip.addEventListener('click', endTutorial);
         document.getElementById('tutorialBtn').addEventListener('click', startTutorial);
 
         window.addEventListener('resize', () => {
-            if (tutorialActive) {
-                const step = tutorialSteps[currentTutorialStep];
-                if (step) {
-                    const targetEl = document.querySelector(step.target);
-                    if (targetEl) positionTutorialElements(targetEl);
-                }
-            }
+            if (tutorialActive) { const step = tutorialSteps[currentTutorialStep]; if (step) { const targetEl = document.querySelector(step.target); if (targetEl) positionTutorialElements(targetEl); } }
             updateCables();
         });
 
-        // ==========================================
-        // RENDERIZADO
-        // ==========================================
+        // --- RENDERIZADO PRINCIPAL ---
         let lastTime = performance.now();
-
         function render(time) {
             updateCables();
-            const deltaTime = (time - lastTime) / 1000;
-            lastTime = time;
+            const deltaTime = (time - lastTime) / 1000; lastTime = time;
             if (state.isRunning) state.time += deltaTime;
 
-            const w = canvas.width;
-            const h = canvas.height;
-            ctx.fillStyle = '#051405';
-            ctx.fillRect(0, 0, w, h);
+            const w = canvas.width, h = canvas.height;
+            ctx.fillStyle = '#051405'; ctx.fillRect(0, 0, w, h);
 
             ctx.strokeStyle = '#1e3a1e'; ctx.lineWidth = 1;
             for (let i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo((w / 10) * i, 0); ctx.lineTo((w / 10) * i, h); ctx.stroke(); }
@@ -1308,31 +967,28 @@
             drawChannel(w, h, state.ch1, state.ch1Connected, '#fcec03');
             drawChannel(w, h, state.ch2, state.ch2Connected, '#00f0ff');
 
-            if (state.cursor.active) {
-                drawCursors(w, h);
-            }
-
+            if (state.cursor.active) drawCursors(w, h);
             requestAnimationFrame(render);
         }
 
         function drawChannel(w, h, chState, isConnected, color) {
             if (!isConnected) return;
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = color;
-            const pxDivX = w / 10;
+            ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.shadowBlur = 5; ctx.shadowColor = color;
             const pxDivY = h / 8;
 
             for (let x = 0; x < w; x++) {
                 let tAtPixel = (x / w) * 10 * state.timeDiv;
                 tAtPixel += state.posX * state.timeDiv;
-                let val = getWaveValue(tAtPixel + state.time, chState);
+                let voltage;
                 
-                let voltage = val * chState.amp;
-                if (chState.coupling === 'DC') voltage += chState.offset;
-                else if (chState.coupling === 'GND') voltage = 0;
+                if (chState.source === 'rc') {
+                    voltage = getRCVoltage(tAtPixel + state.time);
+                } else {
+                    let val = getWaveValue(tAtPixel + state.time, chState);
+                    voltage = val * chState.amp;
+                    if (chState.coupling === 'DC') voltage += chState.offset;
+                    else if (chState.coupling === 'GND') voltage = 0;
+                }
                 
                 voltage *= chState.probe;
                 if (chState.invert) voltage = -voltage;
@@ -1342,44 +998,35 @@
                 
                 if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+            ctx.stroke(); ctx.shadowBlur = 0;
         }
 
         function drawCursors(w, h) {
-            ctx.setLineDash([5, 5]);
-            ctx.strokeStyle = '#ff3333';
-            ctx.lineWidth = 1.5;
-            ctx.font = '12px monospace';
-
+            ctx.setLineDash([5, 5]); ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 1.5; ctx.font = '12px monospace';
             if (state.cursor.type === 'Voltage') {
                 ctx.beginPath(); ctx.moveTo(0, state.cursor.c1); ctx.lineTo(w, state.cursor.c1); ctx.stroke();
                 ctx.fillStyle = '#ff3333'; ctx.fillText(`C1`, 10, state.cursor.c1 - 5);
-                
                 ctx.beginPath(); ctx.moveTo(0, state.cursor.c2); ctx.lineTo(w, state.cursor.c2); ctx.stroke();
                 ctx.fillText(`C2`, 10, state.cursor.c2 - 5);
             } else {
                 ctx.beginPath(); ctx.moveTo(state.cursor.c1, 0); ctx.lineTo(state.cursor.c1, h); ctx.stroke();
                 ctx.fillStyle = '#ff3333'; ctx.fillText(`C1`, state.cursor.c1 + 5, 20);
-                
                 ctx.beginPath(); ctx.moveTo(state.cursor.c2, 0); ctx.lineTo(state.cursor.c2, h); ctx.stroke();
                 ctx.fillText(`C2`, state.cursor.c2 + 5, 20);
             }
-            ctx.setLineDash([]);
-            updateCursorReadout();
+            ctx.setLineDash([]); updateCursorReadout();
         }
 
         window.onload = () => {
             setTimeout(() => {
-                initProbes();
-                updateGenKnobs();
-                updateGenDisplay();
-                updateLabels();
-                selectChannel(1);
+                const redPos = getAbsPos(redTerminal);
+                probe1.style.left = (redPos.left - 50) + 'px'; probe1.style.top = (redPos.top + 10) + 'px';
+                probe2.style.left = (redPos.left - 90) + 'px'; probe2.style.top = (redPos.top + 10) + 'px';
+                updateCables(); updateGenKnobs(); updateGenDisplay(); updateLabels(); selectChannel(1);
+                document.getElementById('rcPanel').style.display = 'none';
                 requestAnimationFrame(render);
             }, 50);
         };
-
     </script>
 </body>
 </html>
