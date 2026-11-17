@@ -28,7 +28,7 @@
             overflow-x: auto;
             user-select: none;
             -webkit-user-select: none;
-            position: relative; /* Crucial para que los cables absolutos se ubiquen bien */
+            position: relative;
         }
 
         .names-watermark {
@@ -41,6 +41,111 @@
             z-index: 999999;
             pointer-events: none;
             letter-spacing: 1px;
+        }
+
+        /* --- BOTÓN DE TUTORIAL --- */
+        .tutorial-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            border: 3px solid #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s;
+            animation: pulse 2s infinite;
+        }
+
+        .tutorial-btn:hover { transform: scale(1.1); }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(52, 152, 219, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+        }
+
+        /* --- SISTEMA DE TUTORIAL --- */
+        #spotlight {
+            position: absolute;
+            border-radius: 8px;
+            border: 3px dashed #f1c40f;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.8), inset 0 0 15px rgba(241, 196, 15, 0.4);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 9001;
+            display: none;
+            animation: spotlightPulse 1.5s infinite;
+        }
+
+        @keyframes spotlightPulse {
+            0% { border-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+            50% { border-color: #fff; box-shadow: 0 0 25px rgba(241, 196, 15, 1); }
+            100% { border-color: #f1c40f; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        }
+
+        #tutorialBox {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.98);
+            color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            width: 280px;
+            max-width: 90vw;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 9002;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            display: none;
+            border-left: 5px solid #f1c40f;
+        }
+
+        #tutorialBox h3 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        #tutorialBox p {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .tutorial-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .tutorial-nav button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            touch-action: manipulation;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-secondary { background: #ecf0f1; color: #333; border: 1px solid #bdc3c7; }
+        .btn-secondary:hover { background: #bdc3c7; }
+
+        .step-success {
+            background-color: #2ecc71 !important;
+            color: white !important;
+            border-left-color: #27ae60 !important;
         }
 
         .workspace {
@@ -352,7 +457,7 @@
 
         /* --- CABLES INTERACTIVOS ABSOLUTOS --- */
         #cableSvg { 
-            position: absolute; /* Cambiado de fixed a absolute */
+            position: absolute;
             top: 0; 
             left: 0; 
             width: 100%; 
@@ -366,7 +471,7 @@
         #pathCH2 { stroke: #0088ff; }
         
         .probe-tip {
-            position: absolute; /* Cambiado de fixed a absolute */
+            position: absolute;
             width: 22px; height: 22px;
             border: 3px solid #fff; border-radius: 50%;
             cursor: grab; z-index: 100000;
@@ -384,6 +489,20 @@
 
     <div class="names-watermark">Laura A. Salamanca, Juan J. Fontalvo</div>
 
+    <!-- Botón de Tutorial -->
+    <button class="tutorial-btn" id="tutorialBtn">?</button>
+
+    <!-- Elementos del Tutorial -->
+    <div id="spotlight"></div>
+    <div id="tutorialBox">
+        <h3 id="tutTitle">Paso 1</h3>
+        <p id="tutText">Texto de ejemplo</p>
+        <div class="tutorial-nav">
+            <button class="btn-secondary" id="tutSkip">Saltar</button>
+            <button class="btn-primary" id="tutNext">Siguiente</button>
+        </div>
+    </div>
+
     <!-- SVG posicionado absolutamente en el documento -->
     <svg id="cableSvg">
         <path id="pathCH1" class="cable-path" d="M 0 0 L 0 0" />
@@ -396,10 +515,10 @@
 
     <div class="workspace">
         <!-- RIGOL OSCILLOSCOPE -->
-        <div class="rigol-chassis">
+        <div class="rigol-chassis" id="rigolChassis">
             
             <div class="display-area">
-                <div class="screen-bezel">
+                <div class="screen-bezel" id="scopeScreen">
                     <canvas id="scopeCanvas" width="1000" height="750"></canvas>
                     
                     <div class="screen-overlay-top">
@@ -436,18 +555,18 @@
             </div>
 
             <div class="control-panel">
-                <div class="panel-group">
+                <div class="panel-group" id="menuPanel">
                     <div class="panel-group-title">MENU</div>
                     <div class="run-control">
-                        <button class="btn btn-yellow" onclick="autoSet()">AUTO</button>
+                        <button class="btn btn-yellow" id="autoBtn" onclick="autoSet()">AUTO</button>
                         <button class="btn" id="runStopBtn" onclick="toggleRunStop()">RUN/STOP</button>
                     </div>
                     <div class="menu-group">
-                        <button class="btn" onclick="changeMenu('cursor')">Cursor</button>
+                        <button class="btn" id="cursorBtn" onclick="changeMenu('cursor')">Cursor</button>
                     </div>
                 </div>
 
-                <div class="panel-group">
+                <div class="panel-group" id="verticalPanel">
                     <div class="panel-group-title">VERTICAL</div>
                     <div class="vertical-group">
                         <div class="vertical-buttons">
@@ -467,7 +586,7 @@
                     </div>
                 </div>
 
-                <div class="panel-group">
+                <div class="panel-group" id="horizontalPanel">
                     <div class="panel-group-title">HORIZONTAL</div>
                     <div class="horizontal-group">
                         <div class="vertical-buttons">
@@ -486,7 +605,7 @@
                     </div>
                 </div>
 
-                <div class="panel-group">
+                <div class="panel-group" id="triggerPanel">
                     <div class="panel-group-title">TRIGGER</div>
                     <div class="trigger-group">
                         <div class="vertical-buttons">
@@ -506,7 +625,7 @@
         </div>
 
         <!-- GENERADOR LEYBOLD -->
-        <div class="generator">
+        <div class="generator" id="leyboldGen">
             <div class="gen-top-panel">
                 <div class="gen-section">
                     <div class="gen-label">f / Hz</div>
@@ -651,7 +770,7 @@
             let isDragging = false;
 
             probeElement.addEventListener('pointerdown', (e) => {
-                e.preventDefault(); // Evita gestos no deseados en móviles
+                e.preventDefault();
                 isDragging = true;
                 probeElement.setPointerCapture(e.pointerId);
             });
@@ -675,7 +794,6 @@
                 
                 const dist = Math.hypot(portPos.centerX - probePos.centerX, portPos.centerY - probePos.centerY);
 
-                // Aumentamos la tolerancia a 60 píxeles para facilitar la conexión con el dedo
                 if (dist < 60) {
                     if (channel === 1) state.ch1Connected = true; else state.ch2Connected = true;
                     probeElement.style.left = (portPos.centerX - 11) + 'px';
@@ -687,6 +805,7 @@
                     probeElement.style.borderColor = '#fff';
                 }
                 updateCables();
+                checkTutorialProgress();
             });
 
             probeElement.addEventListener('pointercancel', () => {
@@ -833,13 +952,16 @@
             const x = (e.clientX - rect.left) * (canvas.width / rect.width);
 
             if (state.cursor.type === 'Voltage') {
-                if (Math.abs(y - state.cursor.c1) < 30) draggingCursor = 1; // Mayor tolerancia táctil
+                if (Math.abs(y - state.cursor.c1) < 30) draggingCursor = 1;
                 else if (Math.abs(y - state.cursor.c2) < 30) draggingCursor = 2;
             } else {
                 if (Math.abs(x - state.cursor.c1) < 30) draggingCursor = 1;
                 else if (Math.abs(x - state.cursor.c2) < 30) draggingCursor = 2;
             }
-            if (draggingCursor) canvas.setPointerCapture(e.pointerId);
+            if (draggingCursor) {
+                canvas.setPointerCapture(e.pointerId);
+                checkTutorialProgress(); // Avanzar si el usuario toca el canvas en el paso del tutorial
+            }
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -871,6 +993,7 @@
             const period = 1 / freq;
             state.timeDiv = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02].reduce((p, c) => Math.abs(c - period/2) < Math.abs(p - period/2) ? c : p);
             updateLabels();
+            checkTutorialProgress(); // AutoSet cuenta como acción
         }
 
         function toggleRunStop() {
@@ -902,6 +1025,7 @@
         function changeMenu(menu) {
             state.activeMenu = menu;
             updateSoftKeyTexts();
+            checkTutorialProgress(); // El cambio de menú avanza el tutorial
         }
 
         function updateSoftKeyTexts() {
@@ -994,10 +1118,169 @@
             }
         }
 
+        // ==========================================
+        // SISTEMA DE TUTORIAL INTERACTIVO
+        // ==========================================
+        const tutorialSteps = [
+            {
+                title: "Paso 1: Conecta la sonda CH1",
+                text: "Arrastra el cable rojo (sonda 1) desde el generador hasta la entrada CH1 del osciloscopio.",
+                target: '#probe1',
+                condition: () => state.ch1Connected,
+            },
+            {
+                title: "Paso 2: Conecta la sonda CH2",
+                text: "Arrastra el cable azul (sonda 2) desde el generador hasta la entrada CH2 del osciloscopio.",
+                target: '#probe2',
+                condition: () => state.ch2Connected,
+            },
+            {
+                title: "Paso 3: Ajusta el Generador",
+                text: "Cambia la frecuencia o amplitud en el generador. Verás cómo afecta a la señal.",
+                target: '#leyboldGen',
+                condition: null, // El usuario pulsa Siguiente
+            },
+            {
+                title: "Paso 4: Ajuste Automático",
+                text: "Pulsa el botón AUTO para configurar el osciloscopio y ver la onda correctamente.",
+                target: '#autoBtn',
+                condition: null, // El usuario pulsa Siguiente
+            },
+            {
+                title: "Paso 5: Herramienta Cursor",
+                text: "Pulsa el botón 'Cursor' en el panel superior para activar las líneas de medición.",
+                target: '#cursorBtn',
+                condition: () => state.activeMenu === 'cursor',
+            },
+            {
+                title: "Paso 6: Mueve los Cursores",
+                text: "Haz clic en 'Display' en los botones laterales, luego arrastra las líneas rojas en la pantalla.",
+                target: '#scopeCanvas',
+                condition: null, // Termina aquí
+            }
+        ];
+
+        let currentTutorialStep = 0;
+        let tutorialActive = false;
+        let isTransitioning = false;
+
+        const spotlight = document.getElementById('spotlight');
+        const tutBox = document.getElementById('tutorialBox');
+        const tutTitle = document.getElementById('tutTitle');
+        const tutText = document.getElementById('tutText');
+        const tutBtn = document.getElementById('tutNext');
+        const tutSkip = document.getElementById('tutSkip');
+
+        function startTutorial() {
+            currentTutorialStep = 0;
+            tutorialActive = true;
+            spotlight.style.display = 'block';
+            tutBox.style.display = 'block';
+            showTutorialStep();
+        }
+
+        function endTutorial() {
+            tutorialActive = false;
+            spotlight.style.display = 'none';
+            tutBox.style.display = 'none';
+        }
+
+        function showTutorialStep() {
+            if (currentTutorialStep >= tutorialSteps.length) {
+                endTutorial();
+                return;
+            }
+
+            const step = tutorialSteps[currentTutorialStep];
+            
+            tutTitle.innerText = step.title;
+            tutText.innerText = step.text;
+            tutBox.classList.remove('step-success');
+            
+            tutBtn.style.display = step.condition ? 'none' : 'block';
+            tutBtn.innerText = (currentTutorialStep === tutorialSteps.length - 1) ? "Finalizar" : "Siguiente";
+            
+            const targetEl = document.querySelector(step.target);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                setTimeout(() => positionTutorialElements(targetEl), 300);
+            }
+        }
+
+        function positionTutorialElements(targetEl) {
+            const rect = targetEl.getBoundingClientRect();
+            const padding = 10;
+
+            spotlight.style.width = (rect.width + padding * 2) + 'px';
+            spotlight.style.height = (rect.height + padding * 2) + 'px';
+            spotlight.style.left = (rect.left - padding) + 'px';
+            spotlight.style.top = (rect.top - padding) + 'px';
+
+            const boxW = tutBox.offsetWidth || 280;
+            const boxH = tutBox.offsetHeight || 150;
+            const margin = 15;
+
+            let boxTop;
+            if (rect.top < window.innerHeight / 2) {
+                boxTop = window.innerHeight - boxH - margin;
+            } else {
+                boxTop = margin;
+            }
+
+            let boxLeft = (window.innerWidth - boxW) / 2;
+            if (boxLeft < margin) boxLeft = margin;
+            if (boxLeft + boxW > window.innerWidth - margin) {
+                boxLeft = window.innerWidth - boxW - margin;
+            }
+
+            tutBox.style.top = boxTop + 'px';
+            tutBox.style.left = boxLeft + 'px';
+        }
+
+        function checkTutorialProgress() {
+            if (!tutorialActive || isTransitioning) return;
+            
+            const step = tutorialSteps[currentTutorialStep];
+            if (step && step.condition && step.condition()) {
+                isTransitioning = true;
+                tutBox.classList.add('step-success');
+                tutText.innerText = "¡Excelente! Avanzando...";
+
+                setTimeout(() => {
+                    currentTutorialStep++;
+                    isTransitioning = false;
+                    showTutorialStep();
+                }, 800);
+            }
+        }
+
+        tutBtn.addEventListener('click', () => {
+            if (isTransitioning) return;
+            currentTutorialStep++;
+            showTutorialStep();
+        });
+
+        tutSkip.addEventListener('click', endTutorial);
+        document.getElementById('tutorialBtn').addEventListener('click', startTutorial);
+
+        window.addEventListener('resize', () => {
+            if (tutorialActive) {
+                const step = tutorialSteps[currentTutorialStep];
+                if (step) {
+                    const targetEl = document.querySelector(step.target);
+                    if (targetEl) positionTutorialElements(targetEl);
+                }
+            }
+            updateCables();
+        });
+
+        // ==========================================
+        // RENDERIZADO
+        // ==========================================
         let lastTime = performance.now();
 
         function render(time) {
-            updateCables(); // Actualizar cables para que sigan a los elementos
+            updateCables();
             const deltaTime = (time - lastTime) / 1000;
             lastTime = time;
             if (state.isRunning) state.time += deltaTime;
